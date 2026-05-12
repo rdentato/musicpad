@@ -29,8 +29,8 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - [ ] Final packaging into one self-contained HTML file
 
 ### M3: Polish & Verify
-- [ ] Add automated tests for sample Musicpad strings and selected `docs/songs/*.mpd`
-- [ ] Test generated output has valid MIDI header/chunk lengths
+- [x] Add automated tests for sample Musicpad strings and selected `docs/songs/*.mpd`
+- [x] Test generated output has valid MIDI header/chunk lengths
 - [ ] Browser-check that download produces a playable `.mid` file
 
 ## Risks

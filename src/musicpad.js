@@ -1019,6 +1019,9 @@
 '11:5' => '0,4,-5,-2,2,5'
 `);
 
+  const NUMBER_LIST_CACHE = new Map();
+  const GUITAR_FRET_CACHE = new Map();
+
   function musicpadToMidi(source, options) {
     return new MusicpadEngine(options).render(source);
   }
@@ -1289,9 +1292,10 @@
         let temptrans = 0;
         let match;
 
-        if (/^\s*$/.test(command)) continue;
+        if (command.length === 0) continue;
+        const lower = command.toLowerCase();
 
-        if ((match = command.match(/tuning\[(.*)\]/i))) {
+        if (lower.includes('tuning[') && (match = command.match(/tuning\[(.*)\]/i))) {
           const tuningcommand = match[1];
           tuning = tuningcommand.split(',').map((part) => {
             const tun = part.match(/([A-G][b#\+-]?)(\d)/i);
@@ -1303,109 +1307,111 @@
           continue;
         }
 
-        if ((match = command.match(/\[(-?\d+,.*)\]/i))) {
-          command = command.replace(/\[(-?\d+,.*)\]/i, '');
-          chord = match[1].split(',').map((n) => Number(n) + note);
-        }
-
-        if ((match = command.match(/\[g:((-|\d+),.*)\]/i))) {
-          command = command.replace(/\[g:((-|\d+),.*)\]/i, '');
-          chord = guitarChord(match[1], tuning);
-        }
-
-        if ((match = command.match(/\[g:(.*)\]/i))) {
-          command = command.replace(/\[g:(.*)\]/i, '');
-          let keycommand = match[1];
-          if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) {
-            keycommand = keycommand.replace(/:.*/i, '');
-            if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know guitar chord ${match[1]}`);
+        if (command.includes('[')) {
+          if ((match = command.match(/\[(-?\d+,.*)\]/i))) {
+            command = command.replace(/\[(-?\d+,.*)\]/i, '');
+            chord = numberList(match[1]).map((n) => n + note);
           }
-          chord = guitarChord(GUITAR_CHORDS[keycommand.toUpperCase()], tuning);
-        }
 
-        if ((match = command.match(/\[(.*)\]/i))) {
-          command = command.replace(/\[(.*)\]/i, '');
-          let keycommand = match[1];
-          const keycommand2 = match[1];
-          if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
-            const root = keycommand.match(/^([A-G][b#\+-]?)/i);
-            if (root) {
-              const keynote = root[1];
-              keycommand = keycommand.replace(/^([A-G][b#\+-]?)/i, '');
-              if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
-                keycommand = keycommand.replace(/:.*/i, '');
-                if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand} in ${keycommand2}`);
-              }
-              const mapped = NOTE_MAP[keynote.toUpperCase()];
-              if (mapped == null) this.error(`I don't know note ${keynote} in ${keycommand2}`);
-              note = mapped + 12 * octave;
-            } else {
+          if ((match = command.match(/\[g:((-|\d+),.*)\]/i))) {
+            command = command.replace(/\[g:((-|\d+),.*)\]/i, '');
+            chord = guitarChord(match[1], tuning);
+          }
+
+          if ((match = command.match(/\[g:(.*)\]/i))) {
+            command = command.replace(/\[g:(.*)\]/i, '');
+            let keycommand = match[1];
+            if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) {
               keycommand = keycommand.replace(/:.*/i, '');
-              if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand2}`);
+              if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know guitar chord ${match[1]}`);
             }
+            chord = guitarChord(GUITAR_CHORDS[keycommand.toUpperCase()], tuning);
           }
-          chord = KEY_CHORDS[keycommand.toUpperCase()].split(',').map((n) => Number(n) + note);
+
+          if ((match = command.match(/\[(.*)\]/i))) {
+            command = command.replace(/\[(.*)\]/i, '');
+            let keycommand = match[1];
+            const keycommand2 = match[1];
+            if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
+              const root = keycommand.match(/^([A-G][b#\+-]?)/i);
+              if (root) {
+                const keynote = root[1];
+                keycommand = keycommand.replace(/^([A-G][b#\+-]?)/i, '');
+                if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
+                  keycommand = keycommand.replace(/:.*/i, '');
+                  if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand} in ${keycommand2}`);
+                }
+                const mapped = NOTE_MAP[keynote.toUpperCase()];
+                if (mapped == null) this.error(`I don't know note ${keynote} in ${keycommand2}`);
+                note = mapped + 12 * octave;
+              } else {
+                keycommand = keycommand.replace(/:.*/i, '');
+                if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand2}`);
+              }
+            }
+            chord = numberList(KEY_CHORDS[keycommand.toUpperCase()]).map((n) => n + note);
+          }
         }
 
-        if ((match = command.match(/strum(\d+),(\d+),(\d+)/i))) {
+        if (lower.includes('strum') && (match = command.match(/strum(\d+),(\d+),(\d+)/i))) {
           strumdelay = this.timeToTick(Number(match[1]));
           strumup = this.timeToTick(Number(match[2]));
           strumupvel = Number(match[3]);
           continue;
         }
-        if ((match = command.match(/strum(\d+),(\d+)/i))) {
+        if (lower.includes('strum') && (match = command.match(/strum(\d+),(\d+)/i))) {
           strumdelay = this.timeToTick(Number(match[1]));
           strumup = this.timeToTick(Number(match[2]));
           continue;
         }
-        if ((match = command.match(/strum(\d+)/i))) {
+        if (lower.includes('strum') && (match = command.match(/strum(\d+)/i))) {
           strumdelay = this.timeToTick(Number(match[1]));
           continue;
         }
-        if (/tomson/i.test(command)) {
+        if (lower.includes('tomson')) {
           tommode = 1;
           chan = (10 - 1) & 0xF;
           note = DRUM_MAP.T4;
           chord = [note];
           continue;
         }
-        if (/tomsoff/i.test(command)) {
+        if (lower.includes('tomsoff')) {
           tommode = 0;
           continue;
         }
-        if (/guiton/i.test(command)) {
+        if (lower.includes('guiton')) {
           guitmode = 1;
           continue;
         }
-        if (/guitoff/i.test(command)) {
+        if (lower.includes('guitoff')) {
           guitmode = 0;
           continue;
         }
-        if ((match = command.match(/stress(\d+)/i))) {
+        if (lower.includes('stress') && (match = command.match(/stress(\d+)/i))) {
           nivstress = Number(match[1]);
           continue;
         }
-        if ((match = command.match(/soft(\d+)/i))) {
+        if (lower.includes('soft') && (match = command.match(/soft(\d+)/i))) {
           nivsoft = Number(match[1]);
           continue;
         }
-        if ((match = command.match(/loose(\d+),(\d+|g)/i))) {
+        if (lower.includes('loose') && (match = command.match(/loose(\d+),(\d+|g)/i))) {
           loosew = this.timeToTick(Number(match[1]));
           looseq = match[2];
           continue;
         }
-        if ((match = command.match(/velvar(\d+),(\d+|g)/i))) {
+        if (lower.includes('velvar') && (match = command.match(/velvar(\d+),(\d+|g)/i))) {
           velvarw = Number(match[1]);
           velvarq = match[2];
           continue;
         }
-        if ((match = command.match(/ctrl(\d+),(\d+)/i))) {
+        if (lower.includes('ctrl') && (match = command.match(/ctrl(\d+),(\d+)/i))) {
           pushVarLen(track, round(abstime - seqtime));
           pushBytes(track, 0xB0 | chan, Number(match[1]), Number(match[2]));
           seqtime = abstime;
           continue;
         }
-        if ((match = command.match(/sysex(.*)/i))) {
+        if (lower.includes('sysex') && (match = command.match(/sysex(.*)/i))) {
           const sysex = match[1].split(',').filter((v) => v.length).map(Number);
           pushVarLen(track, round(abstime - seqtime));
           pushBytes(track, 240);
@@ -1415,21 +1421,21 @@
           seqtime = abstime;
           continue;
         }
-        if ((match = command.match(/pitch\+(\d+)/i))) {
+        if (lower.includes('pitch+') && (match = command.match(/pitch\+(\d+)/i))) {
           const pitch = clamp((8192 * Number(match[1]) / 100) + 8192, 0, 16383);
           pushVarLen(track, round(abstime - seqtime));
           pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
           seqtime = abstime;
           continue;
         }
-        if ((match = command.match(/pitch-(\d+)/i))) {
+        if (lower.includes('pitch-') && (match = command.match(/pitch-(\d+)/i))) {
           const pitch = clamp(8192 - (8192 * Number(match[1]) / 100), 0, 16383);
           pushVarLen(track, round(abstime - seqtime));
           pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
           seqtime = abstime;
           continue;
         }
-        if (/pitch0/i.test(command)) {
+        if (lower.includes('pitch0')) {
           const pitch = 8192;
           pushVarLen(track, round(abstime - seqtime));
           pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
@@ -1437,16 +1443,16 @@
           continue;
         }
 
-        if ((match = command.match(/ch(\d+)/i))) {
+        if (lower.includes('ch') && (match = command.match(/ch(\d+)/i))) {
           chan = (Number(match[1]) - 1) & 0xF;
           continue;
         }
-        if ((match = command.match(/i(\d+)/i))) {
+        if (lower.includes('i') && (match = command.match(/i(\d+)/i))) {
           pushVarLen(track, 0);
           pushBytes(track, 0xC0 | chan, Number(match[1]) - 1);
           continue;
         }
-        if ((match = command.match(/i([A-Z][A-Z0-9])/i))) {
+        if (lower.includes('i') && (match = command.match(/i([A-Z][A-Z0-9])/i))) {
           const drum = DRUM_MAP[match[1].toUpperCase()];
           if (drum != null) {
             note = drum;
@@ -1455,62 +1461,62 @@
           }
           continue;
         }
-        if ((match = command.match(/nt\+(\d)/i))) {
+        if (lower.includes('nt+') && (match = command.match(/nt\+(\d)/i))) {
           temptrans = Number(match[1]);
           command = command.replace(/nt\+(\d)/i, '');
         }
-        if ((match = command.match(/nt-(\d)/i))) {
+        if (lower.includes('nt-') && (match = command.match(/nt-(\d)/i))) {
           temptrans = -Number(match[1]);
           command = command.replace(/nt-(\d)/i, '');
         }
 
-        if ((match = command.match(/r(\d+)\/(\d+)/i))) {
+        if (lower.includes('r') && (match = command.match(/r(\d+)\/(\d+)/i))) {
           nratio = Number(match[1]) / Number(match[2]);
           continue;
         }
-        if (/r1/i.test(command)) {
+        if (lower.includes('r1')) {
           nratio = 1;
           continue;
         }
-        if ((match = command.match(/u(\d+)/i))) {
+        if (lower.includes('u') && (match = command.match(/u(\d+)/i))) {
           nduty = Number(match[1]) / 100;
           continue;
         }
-        if ((match = command.match(/v(\d+)/i))) {
+        if (lower.includes('v') && (match = command.match(/v(\d+)/i))) {
           vel = Number(match[1]);
           continue;
         }
-        if ((match = command.match(/t\+(\d+)/i))) {
+        if (lower.includes('t+') && (match = command.match(/t\+(\d+)/i))) {
           trans = Number(match[1]);
           continue;
         }
-        if (/t0/i.test(command)) {
+        if (lower.includes('t0')) {
           trans = 0;
           continue;
         }
-        if ((match = command.match(/t-(\d+)/i))) {
+        if (lower.includes('t-') && (match = command.match(/t-(\d+)/i))) {
           trans = -Number(match[1]);
           continue;
         }
 
-        if (/^\s*\/\s*$/i.test(command)) {
+        if (command === '/') {
           octave += 1;
           continue;
         }
-        if (/^\s*\\\s*$/i.test(command)) {
+        if (command === '\\') {
           octave -= 1;
           continue;
         }
 
-        if ((match = command.match(/\/(\d+)/i))) {
+        if (command.includes('/') && (match = command.match(/\/(\d+)/i))) {
           nlength = Number(match[1]);
           command = command.replace(/\/(\d+)/i, '');
         }
-        if ((match = command.match(/([A-GO][b#\+-]?)(\d)/i))) {
+        if (hasNoteOrO(command) && (match = command.match(/([A-GO][b#\+-]?)(\d)/i))) {
           octave = Number(match[2]);
           command = command.replace(/([A-GO][b#\+-]?)(\d)/i, match[1]);
         }
-        if ((match = command.match(/([A-G][b#\+-]?)/i))) {
+        if (hasNote(command) && (match = command.match(/([A-G][b#\+-]?)/i))) {
           const mapped = NOTE_MAP[match[1].toUpperCase()];
           if (mapped != null) {
             note = mapped + 12 * octave;
@@ -1518,42 +1524,43 @@
           }
           command = command.replace(/([A-G][b#\+-]?)/i, '');
         }
-        if ((match = command.match(/N\+(\d)/i))) {
+        if (lower.includes('n+') && (match = command.match(/N\+(\d)/i))) {
           deltanote = Number(match[1]);
           command = command.replace(/N\+(\d)/i, '');
         }
-        if ((match = command.match(/N-(\d)/i))) {
+        if (lower.includes('n-') && (match = command.match(/N-(\d)/i))) {
           deltanote = -Number(match[1]);
           command = command.replace(/N-(\d)/i, '');
         }
-        if ((match = command.match(/N(\d+)/i))) {
+        if (lower.includes('n') && (match = command.match(/N(\d+)/i))) {
           note = Number(match[1]);
           chord = [note];
           command = command.replace(/N(\d+)/i, '');
         }
 
-        if (/o/i.test(command)) continue;
+        if (command.includes('o') || command.includes('O')) continue;
 
-        const holds = command.match(/=/g);
-        if (holds) hold += holds.length;
-        command = command.replace(/=/g, '');
-        if (/P/i.test(command)) {
+        if (command.includes('=')) {
+          hold += countChar(command, '=');
+          command = command.replace(/=/g, '');
+        }
+        if (command.includes('P') || command.includes('p')) {
           pause = 1;
           command = command.replace(/P/i, '');
         }
-        if (/-/i.test(command)) {
+        if (command.includes('-')) {
           pause = 1;
-          command = command.replace(/-/i, '');
+          command = command.replace('-', '');
         }
-        if (/'/i.test(command)) {
+        if (command.includes("'")) {
           stress = 1;
-          command = command.replace(/'/i, '');
+          command = command.replace("'", '');
         }
-        if (/,/i.test(command)) {
+        if (command.includes(',')) {
           soft = 1;
-          command = command.replace(/,/i, '');
+          command = command.replace(',', '');
         }
-        if ((match = command.match(/(\d+)/i))) {
+        if (hasDigit(command) && (match = command.match(/(\d+)/i))) {
           if (guitmode) {
             temptrans = Number(match[1]);
           } else if (tommode) {
@@ -1795,13 +1802,62 @@
     return out;
   }
 
+  function hasNoteOrO(value) {
+    for (let i = 0; i < value.length; i += 1) {
+      const code = value.charCodeAt(i) | 32;
+      if ((code >= 97 && code <= 103) || code === 111) return true;
+    }
+    return false;
+  }
+
+  function hasNote(value) {
+    for (let i = 0; i < value.length; i += 1) {
+      const code = value.charCodeAt(i) | 32;
+      if (code >= 97 && code <= 103) return true;
+    }
+    return false;
+  }
+
+  function hasDigit(value) {
+    for (let i = 0; i < value.length; i += 1) {
+      const code = value.charCodeAt(i);
+      if (code >= 48 && code <= 57) return true;
+    }
+    return false;
+  }
+
+  function countChar(value, char) {
+    let count = 0;
+    for (let i = 0; i < value.length; i += 1) {
+      if (value[i] === char) count += 1;
+    }
+    return count;
+  }
+
+  function numberList(text) {
+    let list = NUMBER_LIST_CACHE.get(text);
+    if (!list) {
+      list = text.split(',').map(Number);
+      NUMBER_LIST_CACHE.set(text, list);
+    }
+    return list;
+  }
+
+  function guitarFretList(text) {
+    let list = GUITAR_FRET_CACHE.get(text);
+    if (!list) {
+      list = text.split(',').map((part) => part === '-' ? null : Number(part));
+      GUITAR_FRET_CACHE.set(text, list);
+    }
+    return list;
+  }
+
   function guitarChord(subchord, tuning) {
-    const parts = subchord.split(',');
+    const frets = guitarFretList(subchord);
     const chord = [];
     for (let i = 0; i < 6; i += 1) {
-      const part = parts[i];
-      if (part == null) continue;
-      if (part !== '-') chord.push(tuning[i] + Number(part));
+      const fret = frets[i];
+      if (fret != null) chord.push(tuning[i] + fret);
     }
     return chord;
   }
