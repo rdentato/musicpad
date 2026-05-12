@@ -1,0 +1,18 @@
+tempo150
+(
+|0 iCC 1 P*3
+|  iRC o/16 ----x---x---x-*4 ----x---
+|  iHH o/4  xxxx*4
+|  iSD o/16 ----x-------x-*4 ------x-
+|  iBD o/16 xxx-x-x-x-x---*4 xxx-x-x-
+)*4
+
+# Variation
+
+(
+|0 iCC 1 P*3
+|  iRC o/16 ----x---x---x-*4 ----x---
+|  iHH o/4  xxxx*4
+|  iSD o/16 ----x-----x---*4 ----x---
+|  iBD o/16 xxx-x-x-x---x-*4 xxx-x-x-
+)*4

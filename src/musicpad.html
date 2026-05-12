@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Musicpad</title>
+  <style>
+    body {
+      margin: 2rem;
+      font-family: system-ui, sans-serif;
+      background: #f7f3ea;
+      color: #241f1a;
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    textarea {
+      box-sizing: border-box;
+      width: 100%;
+      min-height: 24rem;
+      padding: 1rem;
+      font: 1rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    button {
+      margin-top: 1rem;
+      padding: 0.7rem 1rem;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    #status {
+      margin-top: 0.75rem;
+      min-height: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Musicpad</h1>
+
+    <textarea id="source" spellcheck="false">tempo100
+|0 ch1 i25 guiton | ch1 guiton | ch1 guiton
+(
+|0 oE5/16 ------5=7=====7=8=====8=2=====2=0=========0=====----------------
+|  oB4/16 ----5==---5====---5====---3====---1===1=====1===0=1=1===========
+|  oG4/16 --5====-----5==-----5==-----2==-----2=========2=0=2=2===========
+)*2</textarea>
+
+    <button id="download" type="button">Generate</button>
+    <div id="status" role="status" aria-live="polite"></div>
+  </main>
+
+  <script src="./musicpad.js"></script>
+  <script>
+    const source = document.getElementById('source');
+    const download = document.getElementById('download');
+    const status = document.getElementById('status');
+
+    download.addEventListener('click', () => {
+      try {
+        const midi = musicpadToMidi(source.value);
+        const blob = new Blob([midi], { type: 'audio/midi' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+
+        link.href = url;
+        link.download = 'musicpad.mid';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+        status.textContent = `Generated ${midi.length} bytes and started download.`;
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+  </script>
+</body>
+</html>

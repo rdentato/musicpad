@@ -1,0 +1,65 @@
+#dEbUgMaX
+
+tempo170
+
+globaloose10,2 globalvelvar10,2 
+
+|0 iTC | iHH | iSD | iBD | iT3 | iT5
+|10 ch1 i26 strum10
+|11 ch2 i26 strum10,100,90 v90
+|12 ch3 i35 o2 v120
+|13 ch4 i86 o6 v90
+|14 ch5 i82 o6 v120
+
+m$d1(
+|0 o/4 - x - - - - - - - - - - - - - -
+|  o/4 x x x x x x x x x x x x x x x x
+|  o/4 - x - x - x - x - x - x - x - x
+|  o/8 xx--xx-x-x-x-x-xx---xx-x-x-x-x--
+|  o/4 - - - - - - - - - - - - - - - o/16 --x-
+|  o/4 - - - - - - - - - - - - - - - o/16 ---x
+)
+
+m$di(
+|0 o/4 -
+|  o/4 -
+|  o/4 -
+|  o/4 -
+|  o/16 --x-
+|  o/16 ---x
+)
+
+m$r1b(4 4 8 16 16 16 16)
+m$r2b(4 4 8 16 16 16 16 16 16 16 16 )
+m$r1a(4 4 4 8)
+m$r2a(4 4 4 8 8 8 )
+m$p( P/1 *4)
+m$pi( P/4)
+
+m$r1( o[g:Amaj:3] $r1b o[g:Emaj] $r2b o[g:Bmin:1] $r1b o[g:Dmaj] $r2b)
+
+m$r2( o[g:Amaj:3] $r1a o[g:Emaj] $r2a o[g:Bmin:1] $r1a o[g:Dmaj] $r2a)
+
+m$r3( o[g:5,4,-,-,-,-] $r1a o[g:4,2,-,-,-,-] $r2a o[g:7,5,-,-,-,-] $r1a o[g:10,9,-,-,-,-] $r2a)
+
+m$b( oA $r1a oE $r2a oB $r1a / oD $r2a \ )
+
+m$r( oA $r1a oE $r2a oB $r1a / oD $r2a \ )
+
+m$s1( o/8 A====== G#=== E== D======== C#=== D== E=)
+
+
+
+
+
+m$t1( o/8 C#=x \ B=x A= Ab=x Gb=x E= D=xx C# D= \ B=== A=x B= / / )
+
+m$t2( o/8 \ C#=x D=x E= Gb=x Ab=x A= B=x / C#=x D= E=x D=x C# D )
+
+
+|0  $di $d1*8
+|12 $pi $b*8
+|10 $pi $p*1 $r3*7
+|11 $pi $p*2 $r1*6
+|13 $pi $p*3 $s1*5
+|14 $pi $p*4 $t1*2 $t2 $t1

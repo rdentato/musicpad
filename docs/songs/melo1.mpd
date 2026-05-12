@@ -1,0 +1,80 @@
+tempo60 globaloose10,2 globalvelvar10,2
+
+#dEbUg
+
+|0 iOH o/24 v80 | iSD o/24 | iBD o/24 | iT4 o/24 v120 | iT6 o/24 v120 | iCC o/24     
+
+m$base1(
+|0 o/24 x-x-x-x-x-x- x-x-x-x-x-x-
+|  o/24 ------x----- ------x-----
+|  o/24 x-x-x-x-x-x- x-x-x-x-x-x- )
+
+m$base2(
+|0 o/24 ------------ ------------
+|  o/24 ------------ ------------
+|  o/24 ------------ v40 x v50 x v60 x v70 x v80 x v90 x v100 x v110 x v120 x v120 x v120 x v120 x v100 )
+
+m$baseP(
+|0 P/1 | P/1 | P/1 )
+
+m$toms1(
+|3 o/24 ------------ ---x-----x--
+|  o/24 ------------ -x---x-x---x )
+
+m$toms2(
+|3 o/24 ------------ v40 x v50 x v60 x v70 x v80 x v90 x v100 x v110 x v120 x v120 x v120 x v120 x v100
+|  o/24 ------------ v40 x v50 x v60 x v70 x v80 x v90 x v100 x v110 x v120 x v120 x v120 x v120 x v100 )
+
+
+m$tomsP( |3 P/1 | P/1 )
+
+m$cr1(
+|5 o/24 x--x--x--x-- ------------ )
+
+m$cr2(
+|5 o/24 x-xx-xx-xx-x x-----x----- )
+
+
+m$crP( |5 P/1 | P/1 )
+
+|10 ch1 i34  v120 |11 ch2 i81  v80 | ch2 v80 | ch2 v80  
+|20 ch3 i81  v80  |21 ch4 i09  v80 |22 ch3 v70  |23 ch3 v70 |24 ch3 v70 |25 ch3 v70  
+
+m$bassP( |10 P/1 )
+m$bass1 (|10 C2/12*9 G*3 )
+m$g1( |11 C3/12*12 | G3/12*12 | E4/12*6  E-*6 )
+m$gP( |11 P/1 | P/1 | P/1 )
+m$mel1A(|20 C5/12*6 C/24== \ B-== / C== \ B-== /)
+m$mel1P( |20 P/1 )
+m$mel2A(|22 D5/12*6  C/12 \ B- G B-= / C )
+m$mel2P( |22 P/1 )
+m$mel3A(|23 E5/12*6  F/4 E- )
+m$mel3P( |23 P/1 )
+m$mel4A(|24 G5/1 )
+m$mel4P( |24 P/1 )
+m$mel5A(|25 B-5/1 )
+m$mel5P( |25 P/1 )
+m$arp1(|21 C5/12 E G / C \ G E C E- G B- G E-)
+m$arpP( |21 P/1 )
+
+( $base1 $tomsP $crP $bassP $gP $mel1P $mel2P $mel3P $mel4P $mel5P $arpP )*4
+( $base1 $tomsP $crP $bass1 $gP $mel1P $mel2P $mel3P $mel4P $mel5P $arpP )*4
+( $base1 $tomsP $crP $bass1 $g1 $mel1P $mel2P $mel3P $mel4P $mel5P $arpP )*4
+( $base1 $tomsP $crP $bass1 $g1 $mel1A $mel2P $mel3P $mel4P $mel5P $arpP )*4
+( $base1 $toms1 $crP $bass1 $g1 $mel1A $mel2P $mel3P $mel4P $mel5P $arpP )*4
+( $base1 $toms1 $crP $bass1 $g1 $mel1A $mel2P $mel3P $mel4P $mel5P $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2P $mel3P $mel4P $mel5P $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3P $mel4P $mel5P $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4P $mel5P $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5P $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*4
+( $base1 $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*8
+( $baseP $toms1 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*3
+( $base2 $toms2 $cr1 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*1
+( $base1 $toms1 $cr2 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*8
+( $baseP $toms1 $cr2 $bass1 $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*4
+( $baseP $toms1 $cr2 $bassP $g1 $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*4
+( $baseP $toms1 $cr2 $bassP $gP $mel1A $mel2A $mel3A $mel4A $mel5A $arp1 )*4
+( $baseP $tomsP $cr1 $bassP $gP $mel1P $mel2A $mel3A $mel4A $mel5A $arp1 )*4
+( $baseP $tomsP $cr1 $bassP $gP $mel1P $mel2P $mel3A $mel4A $mel5A $arpP )*4
+( $baseP $tomsP $cr1 $bassP $gP $mel1P $mel2P $mel3P $mel4A $mel5A $arpP )*1
