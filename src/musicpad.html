@@ -6,43 +6,225 @@
   <title>Musicpad</title>
   <style>
     body {
-      margin: 2rem;
+      margin: 0;
       font-family: system-ui, sans-serif;
       background: #f7f3ea;
       color: #241f1a;
     }
 
     main {
-      max-width: 960px;
-      margin: 0 auto;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 0.75rem;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex: 0 0 auto;
+      margin-bottom: 0.5rem;
+      background: #f7f3ea;
+      z-index: 1;
+    }
+
+    h1 {
+      margin: 0;
+    }
+
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #d8cdbd;
+      padding-bottom: 0.25rem;
+    }
+
+    h3 {
+      margin-top: 1.5rem;
+    }
+
+    .header-left,
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .header-actions {
+      justify-content: flex-end;
+    }
+
+    .page-selector {
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .page-menu {
+      position: absolute;
+      top: calc(100% + 0.25rem);
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      min-width: 9rem;
+      padding: 0.35rem;
+      border: 1px solid #b8ac9c;
+      background: #fffaf0;
+      box-shadow: 0 0.25rem 0.75rem rgb(0 0 0 / 0.12);
+      z-index: 2;
+    }
+
+    .page-menu[hidden],
+    .toolbar[hidden] {
+      display: none;
+    }
+
+    .page-menu button {
+      text-align: left;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5rem;
+      flex: 0 0 auto;
+    }
+
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      flex: 1;
+      min-height: 0;
+      overflow: auto;
+    }
+
+    #editorPage.active {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     textarea {
       box-sizing: border-box;
       width: 100%;
-      min-height: 24rem;
-      padding: 1rem;
+      flex: 1;
+      min-height: 16rem;
+      padding: 0.6rem;
+      border: 1px solid #b8ac9c;
       font: 1rem/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+      resize: none;
     }
 
     button {
-      margin-top: 1rem;
-      padding: 0.7rem 1rem;
+      flex: 0 0 auto;
+      padding: 0.55rem 0.85rem;
       font: inherit;
       cursor: pointer;
     }
 
     #status {
-      margin-top: 0.75rem;
+      margin-top: 0.5rem;
       min-height: 1.5rem;
+    }
+
+    .doc-content {
+      max-width: 1120px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    }
+
+    code {
+      background: #fffaf0;
+      padding: 0.1rem 0.25rem;
+      border: 1px solid #eadfce;
+    }
+
+    pre {
+      background: #fffaf0;
+      border: 1px solid #d8cdbd;
+      padding: 0.75rem;
+      overflow: auto;
+    }
+
+    .example-generate {
+      margin: -0.35rem 0 1rem;
+      padding: 0.4rem 0.7rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+
+    th,
+    td {
+      border: 1px solid #d8cdbd;
+      padding: 0.4rem 0.5rem;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eee3d1;
+      text-align: left;
+    }
+
+    a {
+      color: #694b24;
+    }
+
+    .lesson {
+      border-left: 4px solid #b88a45;
+      padding-left: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .tip,
+    .note {
+      background: #fffaf0;
+      border: 1px solid #d8cdbd;
+      padding: 0.75rem;
+    }
+
+    .note {
+      border-left: 4px solid #b88a45;
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>Musicpad</h1>
+    <div class="header">
+      <div class="header-left">
+        <h1>Musicpad</h1>
+        <div class="page-selector">
+          <button id="pageSelector" type="button" aria-haspopup="true" aria-expanded="false">Editor</button>
+          <div id="pageMenu" class="page-menu" hidden></div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="toolbar">
+          <button id="load" type="button" title="loads your song into the editor">Load</button>
+          <button id="save" type="button" title="downloads editor contents (musicpad.mpd)">Save</button>
+          <input id="file" type="file" accept=".mpd,.txt,text/*" hidden>
+          <button id="download" type="button" title="downloads MIDI file (musicpad.mid)">Generate</button>
+        </div>
+      </div>
+    </div>
 
-    <textarea id="source" spellcheck="false"># My Bloody Valentine, When you sleep
+    <section id="editorPage" class="page active" aria-label="Editor">
+      <textarea id="source" spellcheck="false"># My Bloody Valentine, When you sleep
 
 tempo60
 |0 ch1 o6 i74 
@@ -71,32 +253,531 @@ m$bar1 ( |0 $flute | $bd1 | $sd1 | $oh1 | $bass | $guit | $guit | $guit )
 m$bar2 ( |0 $flute | $bd1 | $sd2 | $oh2 | $bass | $guit | $guit | $guit )
 
 $intro ($bar2 $bar1)*2</textarea>
+      <div id="status" role="status" aria-live="polite"></div>
+    </section>
 
-    <button id="download" type="button">Generate</button>
-    <div id="status" role="status" aria-live="polite"></div>
+    <section id="tutorialPage" class="page" aria-label="Tutorial">
+      <div class="doc-content">
+      <h2>Musicpad Tutorial</h2>
+      <p>Musicpad is a text notation for quickly sketching musical ideas and generating MIDI files. You do not need the whole language at once: start with notes, then add rhythm, tracks, drums, repeats, and macros.</p>
+
+        <section>
+          <h2>1. Start with notes</h2>
+          <p>Write note names separated by spaces. Notes are case-insensitive.</p>
+      <pre>C E G F Eb C# C</pre>
+          <p>Sharps can be written with <code>#</code> or <code>+</code>; flats with <code>b</code> or <code>-</code>.</p>
+        </section>
+
+        <section>
+          <h2>2. Add duration</h2>
+          <p>Add <code>/N</code> to make a note last <code>1/N</code>. The default is <code>1/4</code>.</p>
+      <pre>C/4 E/4 G/2 F/8 Eb/8 C#/8 C/8</pre>
+          <p>Musicpad remembers missing information. Once the duration is <code>/8</code>, following notes reuse it until changed:</p>
+      <pre>C/4 E G/2 F/8 Eb C# C</pre>
+        </section>
+
+        <section>
+          <h2>3. Octaves</h2>
+          <p>Put an octave number after a note, or use standalone <code>/</code> and <code>\</code> to move up and down one octave.</p>
+      <pre>C/4 E G/2 F/8 Eb C# C5/8
+C/4 E G/2 F/8 Eb C# / C</pre>
+          <p>The default octave is 4.</p>
+        </section>
+
+        <section>
+          <h2>4. Repeat notes, hold notes, and pause</h2>
+          <div class="lesson">
+            <p><code>x</code> repeats the previous note or chord.</p>
+      <pre>C/8 x x x</pre>
+          </div>
+          <div class="lesson">
+            <p><code>=</code> holds the previous note for one more duration unit. It can be attached directly.</p>
+      <pre>C/8 E= G=== F Eb C# C</pre>
+          </div>
+          <div class="lesson">
+            <p><code>P</code> is an explicit pause. <code>-</code> is a pause with the previous duration.</p>
+      <pre>C/4 E G/2 P/4 F/8 Eb C# / C x x - x</pre>
+          </div>
+          <p class="tip">Pattern characters do not need spaces. <code>C/8 -x-xxx=x-x</code> is valid.</p>
+        </section>
+
+        <section>
+          <h2>5. Use <code>o</code> to set defaults without playing</h2>
+          <p><code>o</code> means “remember these note settings, but do not play now.” It is especially useful for rhythm patterns.</p>
+      <pre>o/16 x-x-xx--</pre>
+          <p>This sets the duration to sixteenth notes, then plays the pattern.</p>
+        </section>
+
+        <section>
+          <h2>6. Tempo</h2>
+          <p>Set the song tempo with <code>tempoN</code>. The number is quarter notes per minute.</p>
+      <pre>tempo100
+C/4 E G/2 P/4 F/8 Eb C# / C</pre>
+        </section>
+
+        <section>
+          <h2>7. Tracks and channels</h2>
+          <p>Use <code>|</code> to start another independent track. Use <code>chN</code> to give each track a MIDI channel.</p>
+      <pre>ch1 C E G | ch2 E G B</pre>
+          <p>Change instruments with <code>iN</code>, using General MIDI program numbers.</p>
+      <pre>ch1 i17 C E G | ch2 i25 E G B</pre>
+          <p>You can jump back to a specific track with <code>|0</code>, <code>|1</code>, etc. This is useful when writing a song section by section.</p>
+      <pre>ch1 i17 C E G | ch2 i25 E G B |0 F E C | A G E</pre>
+          <p class="tip">Tracks are independent. If two tracks should stay aligned, you must give them matching total durations.</p>
+        </section>
+
+        <section>
+          <h2>8. Drums</h2>
+          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note.</p>
+      <pre>iBD o/16 xx-xxx--
+| iSD o/16 --x---xx
+| iHH o/16 -x-x-x-x</pre>
+          <p>Each drum voice is easiest to read and control on its own track.</p>
+        </section>
+
+        <section>
+          <h2>9. Repeats</h2>
+          <p><code>*N</code> repeats the previous token. Parentheses repeat a group.</p>
+      <pre>iBD 8*8
+
+iBD (8 4)*4</pre>
+          <p>Because rhythm strings like <code>xx-xxx--</code> are single compact tokens before parsing, this is valid:</p>
+      <pre>iBD o/16 xx-xxx--*4
+| iSD o/16 --x---xx*4
+| iHH o/16 -x-x-x-x*4</pre>
+        </section>
+
+        <section>
+          <h2>10. Macros</h2>
+          <p>Define reusable parts with <code>m$name(...)</code>, then call them with <code>$name</code>. Macro names are case-sensitive.</p>
+      <pre>m$riff(C/16 E G)
+$riff $riff*3</pre>
+          <p>Macros are most useful when they include track jumps.</p>
+      <pre>m$drums(
+|0 iBD o/16 xx-xxx--
+|  iSD o/16 --x---xx
+|  iHH o/16 -x-x-x-x
+)
+
+$drums*4</pre>
+        </section>
+
+        <section>
+          <h2>11. A typical song layout</h2>
+          <p>One practical structure is: title/comment, global settings, track setup, macros, then song structure.</p>
+      <pre># My cool song
+
+tempo70
+
+# Instruments
+|0 iHH o/16 | iSD o/16 | iBD o/16
+|5 ch1 i01 o4/16 | ch2 i34 o2/16
+
+# Macros
+m$rhythm(
+|0 xxxxxxxxxxxxxxxx
+|  --x---x---x---x-
+|  x---x---x---x---
+)
+
+m$bass1( |6 E*16 )
+m$bass2( |6 A*16 )
+
+m$piano1( |5 (P G# G# G# A G# F# G#)*2 )
+m$piano2( |5 (P G# G# G# A B / C# E \)*2 )
+
+# Song structure
+$rhythm*4 ($bass1 $bass2 $piano1 $piano2)*2</pre>
+        </section>
+
+        <section>
+          <h2>12. Chords and strumming</h2>
+          <p>For simple block chords, use brackets.</p>
+      <pre>oC4 [0,4,7]
+[Amin]
+[g:-,0,2,2,2,0]
+[g:Amaj]</pre>
+          <p>Use <code>strum</code> to make chords less mechanical.</p>
+      <pre>i25 o/16 strum10,300,80 [g:Amin]*16</pre>
+        </section>
+
+        <section>
+          <h2>13. Guitar mode</h2>
+          <p>In guitar mode, bare numbers mean temporary semitone offsets from the default note. This makes tab-like writing possible.</p>
+      <pre>tempo100
+|0 ch1 i25 guiton | ch1 guiton | ch1 guiton
+(
+|0 oE5/16 ------5=7=====7=8=====8=2=====2=0=========0=====
+|  oB4/16 ----5==---5====---5====---3====---1===1=====1===0=
+|  oG4/16 --5====-----5==-----5==-----2==-----2=========2=0=
+)*2</pre>
+          <p><code>globalguiton</code> turns guitar mode on by default for all tracks. Use <code>guitoff</code> to disable it on a track.</p>
+        </section>
+
+        <section>
+          <h2>14. Tom mode</h2>
+          <p>In tom mode, bare numbers choose toms: 1 is highest, 6 is lowest.</p>
+      <pre>tomson o/16 4 3 5 1 1 5 6 6 4 5 4 2 1 1 1 6</pre>
+        </section>
+
+        <section>
+          <h2>15. More expressive commands</h2>
+          <ul>
+            <li><code>t+N</code>, <code>t-N</code>, <code>t0</code>: transpose following notes.</li>
+            <li><code>N60</code>, <code>N+1</code>, <code>N-1</code>: absolute or relative MIDI note numbers.</li>
+            <li><code>NT+1</code>, <code>NT-1</code>: temporary relative notes.</li>
+            <li><code>Ra/b</code>, <code>R1</code>: duration ratios for triplets and polyrhythms.</li>
+            <li><code>vN</code>, <code>velocityN</code>: velocity.</li>
+            <li><code>'x</code>, <code>,x</code>, <code>stressN</code>, <code>softN</code>: accents.</li>
+            <li><code>looseW,Q</code>, <code>velvarW,Q</code>: humanize timing and velocity.</li>
+            <li><code>pitch+N</code>, <code>pitch-N</code>, <code>pitch0</code>: pitch bends.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Next steps</h2>
+          <p>Open the editor page, modify the example, then use <strong>Generate</strong> to download a MIDI file. Keep the reference page nearby for exact command syntax.</p>
+        </section>
+    </div>
+    </section>
+
+    <section id="referencePage" class="page" aria-label="Reference">
+      <div class="doc-content">
+      <h2>Musicpad Language Reference</h2>
+      <p>This page is a practical reference for the Musicpad notation accepted by the JavaScript MIDI generator. Commands are case-insensitive unless stated otherwise. Whitespace separates commands; do not put whitespace inside one command such as <code>tempo120</code> or <code>C#5/8</code>.</p>
+
+        <section id="basics">
+          <h2>Basic lexical rules</h2>
+          <ul>
+            <li>Notes and commands are generally case-insensitive: <code>c</code>, <code>C</code>, <code>Tempo120</code> work the same.</li>
+            <li>Exceptions: <code>dEbUg</code>, <code>dEbUgMaX</code>, and macro names are case-sensitive.</li>
+            <li>A comment starts with <code>#</code> when it follows whitespace and continues to the end of the line.</li>
+            <li>Whitespace is optional around pattern characters <code>x</code>, <code>-</code>, <code>=</code>, and parentheses used for repeats.</li>
+            <li><code>#</code> after a note is sharp: <code>C#</code> is not a comment.</li>
+          </ul>
+        </section>
+
+        <section id="notes">
+          <h2>Notes, pitch, octave, and duration</h2>
+          <table>
+            <tr><th>Form</th><th>Meaning</th><th>Examples</th></tr>
+            <tr><td><code>A</code> to <code>G</code></td><td>Play a note. Missing octave/duration reuse previous values.</td><td><code>C E G</code></td></tr>
+            <tr><td><code>+</code> or <code>#</code></td><td>Sharp.</td><td><code>A+</code>, <code>A#</code></td></tr>
+            <tr><td><code>-</code> or <code>b</code></td><td>Flat when attached to a note.</td><td><code>A-</code>, <code>Ab</code></td></tr>
+            <tr><td><code>C5</code></td><td>Note with octave.</td><td><code>C5/8</code></td></tr>
+            <tr><td><code>/N</code></td><td>Duration <code>1/N</code>.</td><td><code>A/8</code>, <code>C#5/16</code></td></tr>
+            <tr><td><code>/</code>, <code>\</code></td><td>Raise/lower current octave by one.</td><td><code>/ C \ C</code></td></tr>
+            <tr><td><code>O</code></td><td>Set note/octave/duration defaults without playing.</td><td><code>o/16</code>, <code>oA5/8</code></td></tr>
+            <tr><td><code>X</code></td><td>Repeat previous note/chord.</td><td><code>C x x</code></td></tr>
+            <tr><td><code>P</code></td><td>Pause. Can take duration.</td><td><code>P</code>, <code>P/8</code></td></tr>
+            <tr><td><code>-</code></td><td>Pause of previous duration when standalone.</td><td><code>x-x--</code></td></tr>
+            <tr><td><code>=</code></td><td>Hold the previous event for one more duration unit.</td><td><code>x==</code> is three units long</td></tr>
+            <tr><td><code>N60</code></td><td>Absolute MIDI note number.</td><td><code>N60/4</code></td></tr>
+            <tr><td><code>N+2</code>, <code>N-1</code></td><td>Move the reference note up/down, then play it.</td><td><code>N60 N+2 N-1</code></td></tr>
+            <tr><td><code>NT+2</code>, <code>NT-1</code></td><td>Temporary relative note; does not change the reference note.</td><td><code>x nt+2 x</code></td></tr>
+            <tr><td><code>'</code>, <code>,</code></td><td>Stress or soften the next note, no space.</td><td><code>'x</code>, <code>,A</code></td></tr>
+          </table>
+
+          <p class="note">Ambiguity: <code>F---</code> means <code>F-</code> plus two pauses. Write <code>F ---</code> for F natural plus three pauses.</p>
+        </section>
+
+        <section id="rhythm">
+          <h2>Rhythm, repeats, and ratios</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>*N</code></td><td>Repeat the previous token or parenthesized group N times.</td></tr>
+            <tr><td><code>( ... )*N</code></td><td>Repeat several commands.</td></tr>
+            <tr><td><code>Ra/b</code></td><td>Multiply following durations by <code>a/b</code>. Useful for triplets and polyrhythms.</td></tr>
+            <tr><td><code>R1</code></td><td>Return to normal duration.</td></tr>
+          </table>
+      <pre>iBD o/16 xx-xxx--*4
+| iSD o/16 --x---xx*4
+| iHH o/16 -x-x-x-x*4</pre>
+        </section>
+
+        <section id="tracks">
+          <h2>Tracks</h2>
+          <p>Tracks are independent timelines. Use them for polyphony, instruments, and drums.</p>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>|</code></td><td>Continue on the next track.</td></tr>
+            <tr><td><code>|0</code></td><td>Jump to track 0.</td></tr>
+            <tr><td><code>|N</code></td><td>Jump to track N. No space between <code>|</code> and the number.</td></tr>
+          </table>
+      <pre>ch1 i17 C E G | ch2 i25 E G B</pre>
+        </section>
+
+        <section id="macros">
+          <h2>Macros</h2>
+          <table>
+            <tr><th>Form</th><th>Meaning</th></tr>
+            <tr><td><code>m$name( ... )</code></td><td>Define a macro. The <code>m$</code> prefix must be lowercase.</td></tr>
+            <tr><td><code>$name</code></td><td>Expand/play a macro.</td></tr>
+            <tr><td><code>mrnd$name( $a $b $c )</code></td><td>Define a random macro; each expansion chooses one listed item.</td></tr>
+          </table>
+      <pre>m$riff(C/16 E G)
+$riff $riff*3</pre>
+        </section>
+
+        <section id="chords">
+          <h2>Chords</h2>
+          <p>Chord commands use brackets with no whitespace inside.</p>
+          <table>
+            <tr><th>Form</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td><code>[0,4,7]</code></td><td>Offsets in semitones from the current note.</td><td><code>oC4 [0,4,7]</code></td></tr>
+            <tr><td><code>[g:-,0,2,2,2,0]</code></td><td>Guitar frets relative to tuning; <code>-</code> means muted string.</td><td>A major shape</td></tr>
+            <tr><td><code>[Amin]</code>, <code>[min]</code></td><td>Named keyboard chord. If no root is given, use current note.</td><td><code>[Amin:1]</code></td></tr>
+            <tr><td><code>[g:Amaj]</code></td><td>Named guitar chord. Guitar roots use A-G and <code>b</code> flats.</td><td><code>[g:Amaj:3]</code></td></tr>
+          </table>
+          <p><code>strumA[,B[,C]]</code> delays chord notes by A milliseconds. B is the time window for an upstroke; C is upstroke velocity percent. Try <code>strum10,300,80</code> for rhythm guitar. <code>tuning[E3,A3,D4,G4,B4,E5]</code> changes the six guitar strings used by guitar chords.</p>
+        </section>
+
+        <section id="midi">
+          <h2>Instruments, drums, channels, and tone</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>chN</code></td><td>Set MIDI channel N, 1-based.</td></tr>
+            <tr><td><code>iN</code></td><td>Set General MIDI program N, 1-based.</td></tr>
+            <tr><td><code>iBD</code>, <code>iSD</code>, ...</td><td>Select a drum shortcut, set channel 10, and set the default drum note.</td></tr>
+            <tr><td><code>vN</code></td><td>Set velocity, max 127.</td></tr>
+            <tr><td><code>uN</code></td><td>Duty: note-on portion of the slot in percent.</td></tr>
+            <tr><td><code>t+N</code>, <code>t-N</code>, <code>t0</code></td><td>Transpose following notes.</td></tr>
+            <tr><td><code>pitch+N</code>, <code>pitch-N</code>, <code>pitch0</code></td><td>Pitch bend in percent; 100% is usually about two semitones.</td></tr>
+            <tr><td><code>ctrlA,B</code></td><td>Emit MIDI controller A with value B.</td></tr>
+            <tr><td><code>sysexA,B,C</code></td><td>Emit MIDI SysEx bytes.</td></tr>
+          </table>
+        </section>
+
+        <section id="modes">
+          <h2>Modes</h2>
+          <table>
+            <tr><th>Mode</th><th>Commands</th><th>Bare number meaning</th></tr>
+            <tr><td>Normal</td><td>default</td><td>Play the previous note/chord with duration <code>1/N</code>.</td></tr>
+            <tr><td>Guitar</td><td><code>guiton</code>, <code>guitoff</code>, <code>globalguiton</code></td><td>Temporary semitone offset, useful for tab-like string tracks.</td></tr>
+            <tr><td>Tom</td><td><code>tomson</code>, <code>tomsoff</code></td><td>Tom number 1 high through 6 low, on channel 10.</td></tr>
+          </table>
+        </section>
+
+        <section id="globals">
+          <h2>Global commands</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>tempoN</code></td><td>Quarter notes per minute. Default 60.</td></tr>
+            <tr><td><code>resolutionN</code></td><td>0=96, 1=192, 2=384, 3=1536 PPQN. Default 192.</td></tr>
+            <tr><td><code>dutyN</code></td><td>Default duty percent.</td></tr>
+            <tr><td><code>velocityN</code></td><td>Default velocity.</td></tr>
+            <tr><td><code>stressN</code>, <code>softN</code></td><td>Track settings for stressed/soft notes.</td></tr>
+            <tr><td><code>looseW,Q</code>, <code>globalooseW,Q</code></td><td>Timing humanization: ±W ms. Q is centering power or <code>g</code> Gaussian.</td></tr>
+            <tr><td><code>velvarW,Q</code>, <code>globalvelvarW,Q</code></td><td>Velocity humanization: ±W percent.</td></tr>
+            <tr><td><code>dEbUg</code>, <code>dEbUgMaX</code></td><td>Original debug commands; case-sensitive.</td></tr>
+          </table>
+        </section>
+
+        <section id="drums">
+          <h2>Drum shortcuts</h2>
+          <table>
+            <tr><th>Code</th><th>MIDI note</th><th>Name</th><th>Code</th><th>MIDI note</th><th>Name</th></tr>
+            <tr><td>BD</td><td>36</td><td>Bass Drum 1</td><td>B2</td><td>35</td><td>Bass Drum 2</td></tr>
+            <tr><td>SD</td><td>38</td><td>Snare Drum 1</td><td>S2</td><td>40</td><td>Snare Drum 2</td></tr>
+            <tr><td>RS</td><td>37</td><td>Side Stick</td><td>HC</td><td>39</td><td>Hand Clap</td></tr>
+            <tr><td>HH</td><td>44</td><td>Pedal Hi-hat</td><td>CH</td><td>42</td><td>Closed Hi-hat</td></tr>
+            <tr><td>OH</td><td>46</td><td>Open Hi-hat</td><td>TA</td><td>54</td><td>Tambourine</td></tr>
+            <tr><td>T1</td><td>50</td><td>High Tom 1</td><td>T2</td><td>48</td><td>High Tom 2</td></tr>
+            <tr><td>T3</td><td>47</td><td>Mid Tom 1</td><td>T4</td><td>45</td><td>Mid Tom 2</td></tr>
+            <tr><td>T5</td><td>43</td><td>Low Tom 1</td><td>T6</td><td>41</td><td>Low Tom 2</td></tr>
+            <tr><td>CC</td><td>49</td><td>Crash Cymbal 1</td><td>C2</td><td>57</td><td>Crash Cymbal 2</td></tr>
+            <tr><td>TC</td><td>52</td><td>Chinese Cymbal</td><td>RC</td><td>51</td><td>Ride Cymbal 1</td></tr>
+            <tr><td>R2</td><td>59</td><td>Ride Cymbal 2</td><td>RB</td><td>53</td><td>Ride Bell</td></tr>
+            <tr><td>SC</td><td>55</td><td>Splash Cymbal</td><td>CB</td><td>56</td><td>Cowbell</td></tr>
+          </table>
+        </section>
+
+        <section id="gm">
+          <h2>General MIDI program numbers</h2>
+          <pre>1 Acoustic Grand Piano      17 Drawbar Organ           33 Acoustic Bass          49 String Ensemble 1
+2 Bright Acoustic Piano     18 Percussive Organ        34 Electric Bass Finger   50 String Ensemble 2
+3 Electric Grand Piano      19 Rock Organ              35 Electric Bass Pick     51 SynthStrings 1
+4 Honky-tonk Piano          20 Church Organ            36 Fretless Bass          52 SynthStrings 2
+5 Electric Piano 1          21 Reed Organ              37 Slap Bass 1            53 Choir Aahs
+6 Electric Piano 2          22 Accordion               38 Slap Bass 2            54 Voice Oohs
+7 Harpsichord               23 Harmonica               39 Synth Bass 1           55 Synth Voice
+8 Clavinet                  24 Tango Accordion         40 Synth Bass 2           56 Orchestra Hit
+9 Celesta                   25 Nylon Guitar            41 Violin                 57 Trumpet
+10 Glockenspiel             26 Steel Guitar            42 Viola                  58 Trombone
+11 Music Box                27 Jazz Guitar             43 Cello                  59 Tuba
+12 Vibraphone               28 Clean Guitar            44 Contrabass             60 Muted Trumpet
+13 Marimba                  29 Muted Guitar            45 Tremolo Strings        61 French Horn
+14 Xylophone                30 Overdriven Guitar       46 Pizzicato Strings      62 Brass Section
+15 Tubular Bells            31 Distortion Guitar       47 Orchestral Harp        63 Synth Brass 1
+16 Dulcimer                 32 Guitar Harmonics        48 Timpani                64 Synth Brass 2
+
+65 Soprano Sax              81 Lead 1 Square           97 FX 1 Rain              113 Tinkle Bell
+66 Alto Sax                 82 Lead 2 Sawtooth         98 FX 2 Soundtrack        114 Agogo
+67 Tenor Sax                83 Lead 3 Calliope         99 FX 3 Crystal           115 Steel Drums
+68 Baritone Sax             84 Lead 4 Chiff            100 FX 4 Atmosphere       116 Woodblock
+69 Oboe                     85 Lead 5 Charang          101 FX 5 Brightness       117 Taiko Drum
+70 English Horn             86 Lead 6 Voice            102 FX 6 Goblins          118 Melodic Tom
+71 Bassoon                  87 Lead 7 Fifths           103 FX 7 Echoes           119 Synth Drum
+72 Clarinet                 88 Lead 8 Bass+Lead        104 FX 8 Sci-fi           120 Reverse Cymbal
+73 Piccolo                  89 Pad 1 New Age           105 Sitar                 121 Guitar Fret Noise
+74 Flute                    90 Pad 2 Warm              106 Banjo                 122 Breath Noise
+75 Recorder                 91 Pad 3 Polysynth         107 Shamisen              123 Seashore
+76 Pan Flute                92 Pad 4 Choir             108 Koto                  124 Bird Tweet
+77 Blown Bottle             93 Pad 5 Bowed             109 Kalimba               125 Telephone Ring
+78 Shakuhachi               94 Pad 6 Metallic          110 Bagpipe               126 Helicopter
+79 Whistle                  95 Pad 7 Halo              111 Fiddle                127 Applause
+80 Ocarina                  96 Pad 8 Sweep             112 Shanai                128 Gunshot</pre>
+        </section>
+    </div>
+    </section>
+
+    <section id="aboutPage" class="page" aria-label="About">
+      <div class="doc-content">
+        <h2>About Musicpad</h2>
+        <p>Musicpad is a textual musical notepad: you write compact notation, then generate a MIDI file. The original project was designed as a fast way to capture musical ideas from any computer, using plain text instead of a graphical sequencer.</p>
+
+        <h3>Original project</h3>
+        <p>The original Musicpad was written by Loïc Prot as a CGI Perl script, largely inspired by Jens Johansson’s <em>polymath.cgi</em>. The archived pages describe Musicpad as an online musical notepad with support for notes, rhythms, tracks, macros, polyrhythms, random macros, MIDI controllers, pitch bends, guitar-oriented notation, drum shortcuts, and humanization commands.</p>
+
+        <h3>What Musicpad is good at</h3>
+        <ul>
+          <li>Sketching melodies quickly with note names such as <code>C E G</code>.</li>
+          <li>Writing rhythm patterns compactly with <code>x</code>, <code>-</code>, and <code>=</code>.</li>
+          <li>Layering independent tracks with <code>|</code>.</li>
+          <li>Building songs from reusable macros and repeated sections.</li>
+          <li>Writing drum parts with short names like <code>iBD</code>, <code>iSD</code>, and <code>iHH</code>.</li>
+          <li>Representing guitar-tab-like material with guitar mode.</li>
+        </ul>
+
+        <h3>The “I” project</h3>
+        <p>The archived Musicpad pages included a large “I” project: a Work in Progress transcription of Meshuggah’s 21-minute song <em>I</em>. It showed how Musicpad could be used for long, complex, heavily structured music, with many macros, dense rhythm patterns, and multiple tracks.</p>
+
+        <h3>This JavaScript version</h3>
+        <p>This application ports the Musicpad-to-MIDI functionality to JavaScript. It runs locally in the browser: you can load a Musicpad text file, edit it, save the source, and generate a MIDI file for download. Playback is intentionally left to your own MIDI player or DAW.</p>
+
+        <p>This JavaScript port was done by Remo Dentato (<a href="mailto:rdentato@gmail.com">rdentato@gmail.com</a>). For issues, feedback, corrections, or questions about this version, he is the one to contact.</p>
+      </div>
+    </section>
   </main>
 
   <script src="./musicpad.js"></script>
   <script>
+    const pages = Array.from(document.querySelectorAll('.page'));
+    const pageNames = ['editor', 'tutorial', 'reference', 'about'];
+    const pageLabels = { editor: 'Editor', tutorial: 'Tutorial', reference: 'Reference', about: 'About' };
+    const pageSelector = document.getElementById('pageSelector');
+    const pageMenu = document.getElementById('pageMenu');
+    const toolbar = document.querySelector('.toolbar');
     const source = document.getElementById('source');
+    const load = document.getElementById('load');
+    const save = document.getElementById('save');
+    const file = document.getElementById('file');
     const download = document.getElementById('download');
     const status = document.getElementById('status');
 
+    function showPage(pageName) {
+      for (const page of pages) page.classList.toggle('active', page.id === `${pageName}Page`);
+      pageSelector.textContent = pageLabels[pageName];
+      toolbar.hidden = pageName !== 'editor';
+      renderPageMenu(pageName);
+      closePageMenu();
+    }
+
+    function renderPageMenu(currentPage) {
+      pageMenu.replaceChildren();
+      for (const pageName of pageNames) {
+        if (pageName === currentPage) continue;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = pageLabels[pageName];
+        button.addEventListener('click', () => showPage(pageName));
+        pageMenu.appendChild(button);
+      }
+    }
+
+    function closePageMenu() {
+      pageMenu.hidden = true;
+      pageSelector.setAttribute('aria-expanded', 'false');
+    }
+
+    function togglePageMenu() {
+      pageMenu.hidden = !pageMenu.hidden;
+      pageSelector.setAttribute('aria-expanded', String(!pageMenu.hidden));
+    }
+
+    function downloadBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function generateMidiDownload(musicpadSource, filename) {
+      const midi = musicpadToMidi(musicpadSource);
+      downloadBlob(new Blob([midi], { type: 'audio/midi' }), filename);
+      return midi.length;
+    }
+
+    pageSelector.addEventListener('click', togglePageMenu);
+
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('.page-selector')) closePageMenu();
+    });
+
+    document.querySelectorAll('#tutorialPage pre').forEach((example, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'example-generate';
+      button.textContent = 'Generate';
+      button.title = 'downloads MIDI file for this tutorial example';
+      button.addEventListener('click', () => {
+        try {
+          generateMidiDownload(example.textContent.trim(), `musicpad-example-${index + 1}.mid`);
+          status.textContent = ''; 
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      });
+      example.insertAdjacentElement('afterend', button);
+    });
+
+    showPage('editor');
+
+    load.addEventListener('click', () => {
+      file.value = '';
+      file.click();
+    });
+
+    file.addEventListener('change', async () => {
+      const selected = file.files[0];
+      if (!selected) return;
+
+      try {
+        source.value = await selected.text();
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    save.addEventListener('click', () => {
+      try {
+        downloadBlob(new Blob([source.value], { type: 'text/plain' }), 'musicpad.mpd');
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
     download.addEventListener('click', () => {
       try {
-        const midi = musicpadToMidi(source.value);
-        const blob = new Blob([midi], { type: 'audio/midi' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-
-        link.href = url;
-        link.download = 'musicpad.mid';
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-
-        status.textContent = `Generated ${midi.length} bytes and started download.`;
+        generateMidiDownload(source.value, 'musicpad.mid');
+        status.textContent = '';
       } catch (error) {
         status.textContent = error.message;
       }

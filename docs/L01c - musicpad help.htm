@@ -1,0 +1,688 @@
+<html style="--wm-toolbar-height: 67px;"><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"><script src="L01c%20-%20musicpad%20help_files/athena.js" type="text/javascript"></script>
+<script type="text/javascript">window.addEventListener('DOMContentLoaded',function(){var v=archive_analytics.values;v.service='wb';v.server_name='wwwb-app248.us.archive.org';v.server_ms=317;archive_analytics.send_pageview({});});</script>
+<script type="text/javascript" src="L01c%20-%20musicpad%20help_files/bundle-playback.js" charset="utf-8"></script>
+<script type="text/javascript" src="L01c%20-%20musicpad%20help_files/wombat.js" charset="utf-8"></script>
+<script>window.RufflePlayer=window.RufflePlayer||{};window.RufflePlayer.config={"autoplay":"on","unmuteOverlay":"hidden","showSwfDownload":true};</script>
+<script type="text/javascript" src="L01c%20-%20musicpad%20help_files/ruffle.js"></script>
+<script type="text/javascript">
+    __wm.init("https://web.archive.org/web");
+  __wm.wombat("http://l01c.ouvaton.org:80/musicpad-help.html","20131211235440","https://web.archive.org/","web","https://web-static.archive.org/_static/",
+	      "1386806080");
+</script>
+<link rel="stylesheet" type="text/css" href="L01c%20-%20musicpad%20help_files/banner-styles.css">
+<link rel="stylesheet" type="text/css" href="L01c%20-%20musicpad%20help_files/iconochive.css">
+<!-- End Wayback Rewrite JS Include -->
+
+<title>L01c - musicpad help</title>
+<style>
+<!--
+
+small	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 12;
+	}
+
+td	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 12;
+	}
+
+p	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 12;
+	}
+
+form	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 12;
+	text-align: center;
+	}
+
+h1	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 36;
+	text-align: center;
+	color: #FFFFFF;
+	}
+
+h2	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 20;
+	text-align: center;
+	color: #FFFFFF;
+	}
+
+h3	{
+	font-family: Verdana,Arial,Helvetica,sans-serif;
+	font-size: 14;
+	text-align: center;
+	color: #FFFFFF;
+	}
+
+b	{
+	color: #FFFFFF;
+	}
+
+
+-->
+</style>
+
+</head><body bgcolor="#99CCFF" text="#000000" link="#0000cc" alink="#0000cc" vlink="#0000cc" marginwidth="30" marginheight="30" data-new-gr-c-s-check-loaded="8.937.0" data-gr-ext-installed=""><!-- BEGIN WAYBACK TOOLBAR INSERT -->
+<script>__wm.rw(0);</script>
+<div id="wm-ipp-base" lang="en" style="display: block; direction: ltr; height: 67px;" toolbar-mode="auto">
+</div><div id="wm-ipp-print">The Wayback Machine - https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org:80/musicpad-help.html</div>
+<script type="text/javascript">//<![CDATA[
+__wm.bt(775,27,25,2,"web","http://l01c.ouvaton.org/musicpad-help.html","20131211235440",1996,"https://web-static.archive.org/_static/",["https://web-static.archive.org/_static/css/banner-styles.css?v=1utQkbB3","https://web-static.archive.org/_static/css/iconochive.css?v=3PDvdIFv"], false);
+  __wm.rw(1);
+//]]></script>
+<!-- END WAYBACK TOOLBAR INSERT -->
+ 
+
+<center>
+
+<h1>musicpad help</h1>
+
+<p><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad.php">back to musicpad</a>
+
+</p><p><b>OK, if you're REALLY completely lost with the blurb hereunder, you can give a try to the <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad-tut.html">TUTORIAL</a>.</b>
+
+<table><tbody><tr><td valign="top" width="50%">
+
+<h2>instructions</h2>
+musicpad is an online musical notepad which lets you code your musical 
+inspiration in a simple way and generate midi files. Lots of features 
+are already implemented (macros, polyrythms) and lots of others will be 
+added (randomization, midi controllers, sweeps, saves,...)
+
+<p>The core of musicpad is a cgi perl script. You can <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad.zip">fetch the sourcecode</a> and play around with it.
+
+</p><p>musicpad is not case sensitive, except for dEbUg, and macros. Don't put whitespace <i>inside</i> commands, but use as many whitespaces and new lines as wished <i>between</i> them.
+
+</p><h3>Notes</h3>
+<b>A#5/8</b> : play A# at octave 5 for 1/8
+<br><b>notes</b> are : A to G.
+<br><b>P</b> for Pause (see also - below)
+<br><b>O</b> doesn't play any note, and is used for defining note, 
+octave and/or duration. For example a oA5/16 defines a A5/16 as the 
+default note but doesn't play it. A x would then play that note. Other 
+valid syntax: n5 defines octave 5, o/16 defines duration 1/16, o5/16 
+defines octave 5 and duration 1/16, oA+/16 defines note A+ and duration 
+1/16, etc...
+<br><b>A+</b> or <b>A#</b> means A sharp
+<br><b>A-</b> or <b>Ab</b> means A flat
+<br>If you don't include all characteristic for the note, the missing characteristics will be the same as previous note. Example:
+<ul>
+<li><b>A/4</b> :  play A at same octave as previous note for 1/4
+</li><li><b>A4</b> :  play A at octave 4 for same duration as previous note
+</li><li><b>C</b>  :  play C at same octave and for same duration as previous note
+</li></ul>
+
+<p><b>8</b> : A number alone means different things depending on mode:
+</p><ul><li>in normal mode: same note as previous note for duration 1/8
+</li><li>in guitar mode (<b><i>guiton</i></b>), a note 8 half-tones 
+above previous "normal" note (a bit like a relative n+x note, except 
+that it's only temporary and the note after this one will not be based 
+on 8 half-tones above)
+</li><li>in toms mode (<b><i>tomson</i></b>), the number indicate the Tom number to be played (from 1-highest to 6-lowest) for the same duration as previous note.
+</li></ul>
+<b>X</b> : play same as previous note
+<br><b>-</b> : pause of same duration as previous note (or pause)
+<br><b>=</b> : the previous note is held for its initial duration (can 
+be used multiple times: x== holds it 3 times longer, x=== 4 times, 
+etc...)
+<br><b>X, - and =</b> can be used for defining <b>rythm patterns</b>. No whitespace is needed between those
+<br><b>N<i>xx</i></b> : play absolute midi note xx (e.g. C5 = 60)
+<br><b>N+<i>x</i></b> or <b>n-<i>x</i></b> : play new note with +x or -x half-tones relatively to previous note played.
+<br><b>Nt+<i>x</i></b> or <b>nt-<i>x</i></b> : play new note with +x or -x half-tones relatively to previous note played, but doesn't change the reference note.
+<br><b>/</b> : octave +1
+<br><b>\</b> : octave -1
+<br><b>'X</b> or <b>'A</b> ... : stress note (no space)
+<br><b>,X</b> or <b>,A</b> ... : soft note (no space)
+<br><b>R<i>a</i>/<i>b</i></b> : next notes duration should be multiplied by a/b (allows playing triplets with 4/3 or 2/3 etc. Also used for polyrythms)
+<br><b>R1</b> : back to normal duration
+<br><b>[...]</b>: chord. 4 different chord syntaxes are available:
+<ul><li><b>[-5,0,3,7,...]</b> :  notes definition in half-tones, relative to actual note.
+</li><li><b>[G:-,0,2,2,2,1]</b> :  guitar chord, relative to guitar tuning ('-' for not-played string)
+</li><li><b>[Amin]</b> or <b>[min]</b> :  standard keyboard chord. Chords have variations, usually :1 and :2, in some cases up to :5 - try min:1 , min:2.
+</li><li><b>[G:Amaj]</b> : standard guitar chord. Guitar Chords also 
+have varations indicated with ':' . Note that guitar chord base note is 
+to be written only with 'A-G' and 'b' for flat (don't use sharp '#','+' 
+or flat '-') (hey, don't complain, you still have 900+ guitar chords to 
+choose from !!!)
+</li></ul>
+<br>you should take a look at the <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad-chords.html">chords list</a>.
+
+
+<h3>Commands</h3>
+<br><b>...*<i>x</i></b> or <b>( )*<i>x</i></b> : repeat x times
+<br><b>m$<i>xx</i>(...)</b> : define macro $xx (NB: m$ lowercase only)
+<br><b>mrnd$<i>xx</i>(...)</b> : define random macro $xx; inside the 
+macro, list all possible macros. Everytime you process the song, one 
+macro will be randomly chosen from the list to remplace the random 
+macro. (NB: mrnd$ lowercase only)
+<br><b>$<i>xx</i></b> : play macro $xx
+<br><b>i<i>xx</i></b> : use instrument xx - see GM instruments list below
+<br><b>iBD</b>, <b>iSD</b>, ... Use Bass Drum, Snare Drum,... (defines 
+both default note and Channel 10) - see drummap below. Playing standard 
+notes on ch10 also produces drums.
+<br><b>ch<i>xx</i></b> : use midi channel xx
+<br><b>u<i>xx</i></b> : (duty) note is played over xx% of normal length - 10 for staccato, 98 by default, 100 max
+<br><b>v<i>xx</i></b> : set velocity to xx (max 127)
+<br><b>t+<i>x</i></b> or <b>t-<i>x</i></b> : transpose of x half-tones up or down (t0 to cancel transpose) 
+<br><b>|</b> : next track
+<br><b>|0</b> : back to first track
+<br><b>|<i>x</i></b> : jump to track x (no space between | and x)
+<br><b>stress<i>xx</i></b> : stressed notes will be xx% stronger
+<br><b>soft<i>xx</i></b> : soft notes will be xx% softer
+<br><b>pitch+<i>x</i></b> or <b>pitch-<i>x</i></b> : change pitch of +/- x% (usually 100% = 2 half-tones). <b>pitch0</b> to center pitch.
+<br><b>#</b> : comment (the rest of the line is ignored)
+<br><b>loose<i>w,q</i></b> : add "human" feel to playing; notes hit will
+ vary of +/- w milliseconds around exact time. The q parameter defines 
+how centered notes are: with a q of 1 repartition is random (rectangular
+ distribution), with a higher q notes are more centered on exact time 
+(q=10 is almost always exact time); if you specify q=g, you get a 
+gaussian distribution (ex: loose10,g). A standard value example would be
+ loose20,2
+<br><b>velvar<i>w,q</i></b> : add another "human" feel to playing; notes
+ velocity will vary of +/- w% around standard velocity. The q parameters
+ defines how centered velocity is: with a q of 1 repartition is random 
+(rectangular distribution), with a higher q notes are more centered on 
+exact velocity (q=10 is almost always exact velocity); if you specify 
+q=g, you get a gaussian distribution (ex: velvar10,g). A standard value 
+example would be velvar10,2
+<br><b>guiton</b>: activate Guitar mode (a number alone means a note with temporary transpose)
+<br><b>guitoff</b>: de-activate Guitar mode
+<br><b>tomson</b>: activate Tom mode (a number alone means the tom number to be played, on channel 10)
+<br><b>tomsoff</b>: de-activate Tom mode
+<br><b>ctrl<i>a,b</i></b> : send midi control parameters a,b
+<br><b>sysex<i>a,b,c,...</i></b> : send midi sysex values a,b,c,...
+<br><b>strum<i>a,b,c</i></b> : chord strumming parameters - a = delay 
+between notes in milliseconds, b = maximum time to trigger upstrike in 
+milliseconds, c = upstrike volume in %. For a rythm guitar try 
+strum10,300,80 . Parameters b and c are optionnal.
+<br><b>tuning[E3,A3,D4,G4,B4,E5]</b> : defines guitar tuning.
+
+
+<h3>Global Commands</h3>
+Global Commands are valid for the whole song.
+<br><b>tempo<i>xx</i></b> : define tempo per quarter note (by default 60)
+<br><b>resolution<i>x</i></b> : define resolution (0 for 96 ppqn, 1 for 192 ppqn, 2 for 384 ppqn, 3 for 1536 ppqn. 192 by default)
+<br><b>duty<i>xx</i></b> : define default duty of notes (by default 98)
+<br><b>velocity<i>xx</i></b> : define default velocity of notes (by default 100)
+<br><b>dEbUg</b> (case sensitive command!) : debug mode, will print out processings - allow you to debug your song... also <b>dEbUgMaX</b> is an even more insanely complete debug mode...
+<br><b>globaloose<i>w,q</i></b> : define default loose parameters for all tracks (see loose above)
+<br><b>globalvelvar<i>w,q</i></b> : define default velvar parameters for all tracks (see velvar above)
+<br><b>globalguiton</b>: all instruments are in guitar mode by default
+
+<h2>some notes</h2>
+<ul>
+<li>Syntax structure can vary depending on song style and complexity. I 
+personaly like to define instruments first, then macros, then playing 
+the song, but it's my personnal taste. See also <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad-I.html">the "I" project</a> for lots of song syntax examples.
+</li><li>Non-spaced Pattern mode (xxx--) can be mixed with standard 
+notes (F5). Be careful though: 'F---' (F and 3 times '-' without spaces)
+ is interpreted as: F flat, then two pauses. Add spaces in case of 
+uncertainty: 'F ---' (F, space, and 3 times '-') means F then 3 pauses, 
+'F- ---' (F, '-', space, and 3 times '-') means F flat then 3 pauses. 
+Use the dEbUg mode if you don't understand why your code is 
+"misinterpreted".
+</li><li><b>Known bugs:</b>
+<ul>
+<li>Some heavy songs can be very slow to create depending on server 
+traffic, and issue a time-out error. Don't be discouraged, try again, or
+ try another time.
+</li><li>When using song saving and editing, don't use the "back" command on your browser, ever - it might delete your song.
+</li></ul>
+</li></ul>
+
+</td><td valign="top" width="50%">
+
+<h2>quick reference</h2>
+
+<b>a</b> : note (La)
+<br><b>b</b> : note (Si). Following a note: flat
+<br><b>c</b> : note (Do)
+<br><b>ctrl</b> : send midi control parameters
+<br><b>ch</b> : midi channel
+<br><b>d</b> : note (Ré)
+<br><b>dEbUg</b> : debug mode (case sensitive command)
+<br><b>dEbUgMaX</b> : debug overkill mode (case sensitive command)
+<br><b>duty</b> : default duty
+<br><b>e</b> : note (Mi)
+<br><b>f</b> : note (Fa)
+<br><b>g</b> : note (Sol)
+<br><b>globaloose</b> : define global time randomness
+<br><b>globalvelvar</b> : define velocity randomness
+<br><b>globalguitmode</b> : guitar mode by default
+<br><b>guiton</b>: activate guitar mode
+<br><b>guitoff</b>: de-activate guitar mode
+<br><b>i</b> : instrument
+<br><b>loose</b> : define time randomness
+<br><b>m$</b> : define macro (lowercase only!)
+<br><b>mrnd$</b> : define random macro (lowercase only!)
+<br><b>n</b> : play absolute or relative note
+<br><b>nt</b> : play temporary relative note
+<br><b>o</b> : don't play note
+<br><b>p</b> : pause
+<br><b>pitch</b> : pitch variation
+<br><b>r</b> : duration ratio
+<br><b>resolution</b> : song resolution
+<br><b>stress</b> : stressed notes definition
+<br><b>strum</b> : chord struming
+<br><b>soft</b> : soft notes definition
+<br><b>sysex</b> : send midi sysex
+<br><b>t</b> : transpose
+<br><b>tempo</b> : song tempo
+<br><b>tomson</b> : tom mode on
+<br><b>tomsoff</b> : tom mode off
+<br><b>tuning</b> : guitar tuning for chords
+<br><b>u</b> : duty
+<br><b>v</b> : velocity
+<br><b>velocity</b> : default velocity
+<br><b>velvar</b> : define velocity randomness
+<br><b>x</b> : same note
+<br><b>+</b> : Following a note : sharp
+<br><b>-</b> : pause same duration. Following a note : flat
+<br><b>=</b> : hold note
+<br><b>#</b> : comment. Following a note: sharp
+<br><b>*</b> : repeat
+<br><b>/</b> : define duration (or used in ratio) or octave +1
+<br><b>\</b> : octave -1
+<br><b>|</b> : change track
+<br><b>$</b> : play macro (see m$)
+<br><b>'</b> : stress note (no space)
+<br><b>,</b> : soft note (no space)
+<br><b>[...]</b> : chord (see the <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad-chords.html">chords list</a>)
+
+<h2>some examples</h2>
+
+<b>Chromatic:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=o/8%20c%20d%20e%20f%20g%20a%20b%20/%20c">o/8 a d e f g a b / c</a>
+<p><b>Melodic:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=o5/16%20i27%20(c%20e%20g%20e%20a%20f%20b%20g)*3%20c%20e%20g%20a/4%20|%20o/16%20i27%20(c%20g%20/%20c%20\%20g%20f%20/%20c%20\%20g%20b)*3%20c%20g%20/%20c%20e/4">o5/16 i27 (c e g e a f b g)*3 c e g a/4 | o/16 i27 (c g / c \ g f / c \ g b)*3 c g / c e/4</a>
+</p><p><b>Rythm:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=iBD%204*8%20|%20iSD%20(P/8%208)*8%20|%20iCH%2016*32">iBD 4*8 | iSD (P/8 8)*8 | iCH 16*32</a>
+</p><p><b>Rythm with subtil human feel:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=globaloose15,2%20globalvelvar20,2%20iBD%204*8%20|%20iSD%20(P/8%208)*8%20|%20iCH%2016*32">globaloose15,2 globalvelvar20,2 iBD 4*8 | iSD (P/8 8)*8 | iCH 16*32</a>
+</p><p><b>Rythm played by beginner:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=globaloose50,1%20globalvelvar30,1%20iBD%204*8%20|%20iSD%20(P/8%208)*8%20|%20iCH%2016*32">globaloose50,1 globalvelvar30,1 iBD 4*8 | iSD (P/8 8)*8 | iCH 16*32</a>
+</p><p><b>Rythm patterns:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=iB2%20o/16%20xx-xxx--*4%20|%20iS2%20o/16%20--x---xx*4%20|%20iHH%20o/16%20-x-x-x-x*4">iB2 o/16 xx-xxx--*4 | iS2 o/16 --x---xx*4 | iHH o/16 -x-x-x-x*4</a>
+</p><p><b>Polyrythm, triplets:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=iBD%208*8%20|%20iCH%20r8/12%208*12">iBD 8*8 | iCH r8/12 8*12</a>
+</p><p><b>Polyrythm, play 17 over 15:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=iBD%20r16/17%2016*17%20|%20iCH%20r16/15%2016*15">iBD r16/17 16*17 | iCH r16/15 16*15</a> ... or even simpler: <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=iBD%2017*17%20|%20iCH%2015*15">iBD 17*17 | iCH 15*15</a> ...
+</p><p><b>Playing with macros and track shifts:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=|0%20ch1%20o1%20i12%20|%20ch2%20i12%20o1%20v75%20|%20ch3%20i12%20o1%20v50%20m$1(o/32%20c%20e%20g%20e%20g%20/%20c%20\%20g%20/%20c%20e)%20m$2(|0%20$1%20|%20r3/2%20p/128%20r1%20$1%20|%20r5/2%20p/128%20r1%20$1)%20$2*8">|
+0 ch1 o1 i12 | ch2 i12 o1 v75 | ch3 i12 o1 v50 m$1(o/32 c e g e g / c \ g
+ / c e) m$2(|0 $1 | r3/2 p/128 r1 $1 | r5/2 p/128 r1 $1) $2*8</a>
+</p><p><b>Playing with macros and track shifts, dEbUgMaX mode ! (watch out...):</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=dEbUgMaX%20|0%20ch1%20o1%20i12%20|%20ch2%20i12%20o1%20v75%20|%20ch3%20i12%20o1%20v50%20m$1(o/32%20c%20e%20g%20e%20g%20/%20c%20\%20g%20/%20c%20e)%20m$2(|0%20$1%20|%20r3/2%20p/128%20r1%20$1%20|%20r5/2%20p/128%20r1%20$1)%20$2*8">dEbUgMaX
+ |0 ch1 o1 i12 | ch2 i12 o1 v75 | ch3 i12 o1 v50 m$1(o/32 c e g e g / c \
+ g / c e) m$2(|0 $1 | r3/2 p/128 r1 $1 | r5/2 p/128 r1 $1) $2*8</a>
+</p><p><b>Hold Notes: </b><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=o/16%20g%20g%20g%20d%23%3D%3D%3D%3D%3D%3D--%20f%20f%20f%20d%3D%3D%3D%3D%3D%3D">o/16 g g g d#======-- f f f d======</a>
+</p><p><b>Fun with random macros:</b><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=o6/64%20m$1(c)%20m$2(e)%20m$3(g)%20mrnd$4($1%20$2%20$3)%20$4*64">o6/64 m$1(c) m$2(e) m$3(g) mrnd$4($1 $2 $3) $4*64</a>
+</p><p><b>Fun with random macros &amp; relative notes:</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=m$1(n%2B2)%20m$2(n-1)%20mrnd$n($1%20$2)%20on40/64%20$n*128">m$1(n+2) m$2(n-1) mrnd$n($1 $2) on40/64 $n*128</a>
+</p><p><b>Guitar mode :</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=guiton%20i25%20oA3/16%200%204%207%20%3D%20%3D%20%3D%204%205%202%204%200%200%20%3D%20%3D%20-%2011%2012%2011%20%3D%20%3D%2012%2011%207%209%2011%2012%200%200">guiton i25 oA3/16 0 4 7 = = = 4 5 2 4 0 0 = = - 11 12 11 = = 12 11 7 9 11 12 0 0</a>
+</p><p><b>Temporary Transpose :</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=i01%20m$1(nt%2B2)%20m$2(nt-1)%20m$3(nt%2B4)%20m$4(nt%2B7)%20mrnd$n($1%20$2%20$3%20$4)%20on60/32%20(x%20$n)*128">
+i01 m$1(nt+2) m$2(nt-1) m$3(nt+4) m$4(nt+7) mrnd$n($1 $2 $3 $4) on60/32 (x $n)*128</a>
+
+</p><p><b>Pitchs :</b> <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=m$p(%20P/8%20pitch-20%20P/16%20pitch-40%20P/8%20pitch-20%20P/16%20pitch0%20P/8%20)%20|%20ch1%20i49%20C5/2%20D%20E%20F%20G%20|%20ch1%20$p*5">m$p( P/8 pitch-20 P/16 pitch-40 P/8 pitch-20 P/16 pitch0 P/8 ) |0 ch1 i49 C5/2 D E F G | ch1 $p*5</a> (note the use of a separate pitch track to be able to pitch a note while it's still playing)
+</p><p><b>Chords (4 different ways) &amp; strumming:</b></p><ul><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/cgi-bin/musicpad.cgi?string=tempo120%20m$rythm(o/16%20x%20%3D%20x%20x%20%27x%20x%20x%20x%20%3D%20x%20x%20x%20%27x%20x%20x%20x%20)%20i25%20strum10,300,80%20loose10,2%20velvar10,1%20oE3/8%20o[0,7,12,16,19,24]%20$rythm*2%20o[0,5,12,17,21,24]%20$rythm*2%20p/4%20oE4/8%20o[maj:2]%20$rythm*2%20o[Amaj]%20$rythm*2%20p/4%20o[g:0,2,2,1,0,0]%20$rythm*2%20o[g:0,0,2,2,2,0]%20$rythm*2%20p/4%20o[g:Emaj]%20$rythm*2%20o[g:Amaj]%20$rythm*2">tempo120 m$rythm(o/16 x = x x 'x x x x = x x x 'x x x x )<br>i25 strum10,300,80 loose10,2 velvar10,1<br>oE3/8 o[0,7,12,16,19,24] $rythm*2 o[0,5,12,17,21,24] $rythm*2 p/4<br>oE4/8 o[maj:2] $rythm*2 o[Amaj] $rythm*2 p/4<br>o[g:0,2,2,1,0,0] $rythm*2 o[g:0,0,2,2,2,0] $rythm*2 p/4<br>o[g:Emaj] $rythm*2 o[g:Amaj] $rythm*2</a></ul>
+<p><b>see also <a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad-I.html">the "I" project</a>.</b>
+
+</p><h2>using the songlist</h2>
+
+<ul>
+<li>You have to be logged in to be able to save a song. Click on 
+"register" on top left to get a user &amp; password. In case you forgot 
+your password just <a href="https://web.archive.org/web/20131211235440/mailto:loicprot_AT_yahoo.com">send me an email</a>.
+</li><li>click on <img src="L01c%20-%20musicpad%20help_files/listen.gif"> to listen to a song.
+</li><li>click on <img src="L01c%20-%20musicpad%20help_files/edit.gif"> to edit a song (even if it's not one of yours, but in that case you'll have to "save as new").
+</li><li>click on columns header to sort songs
+</li><li>you can filter songs on a word, or view only yours.
+</li><li>by default new songs are <img src="L01c%20-%20musicpad%20help_files/unpublish.gif"> = not published, meaning only you can listen and edit them. Click on the icon to change its status to <img src="L01c%20-%20musicpad%20help_files/publish.gif"> published, and share it with other users.
+</li><li>you can delete your song by clicking on <img src="L01c%20-%20musicpad%20help_files/delete.gif">. The <a href="https://web.archive.org/web/20131211235440/mailto:loicprot_AT_yahoo.com">admin</a> can undelete them if needed.
+</li></ul>
+
+<h2>legal advice</h2>
+
+<p>By using musicpad you abide to the website's policy:
+</p><ul>
+<li>You retain the rights to your own songs, but when publishing them (status <img src="L01c%20-%20musicpad%20help_files/publish.gif">) you accept to share them with the other users, allowing them implicitely to copy and modify them at will.
+</li><li>The admin is all-knowing and all-powerful. He can decide to ban abusive users, delete songs, delete or modify comments, etc...
+</li><li>In case of problems, questions, requests, etc, contact <a href="https://web.archive.org/web/20131211235440/mailto:loicprot_AT_yahoo.com">loic prot</a>.
+</li></ul>
+
+</td></tr></tbody></table>
+
+</p><p><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad.php">back to musicpad</a>
+
+<table><tbody><tr><td valign="top" width="25%">
+
+<h2>drummap</h2>
+
+<center>
+<table cellspacing="2" cellpadding="0" border="0">
+<tbody><tr><td><b>code.</b></td><td><b>midi.</b></td><td><b>name</b></td></tr>
+<tr><td>BD</td><td>36</td><td>Bass Drum 1</td></tr>
+<tr><td>B2</td><td>35</td><td>Bass Drum 2</td></tr>
+<tr><td>SD</td><td>38</td><td>Snare Drum 1</td></tr>
+<tr><td>S2</td><td>40</td><td>Snare Drum 2</td></tr>
+<tr><td>RS</td><td>37</td><td>Side Stick (RimShot)</td></tr>
+<tr><td>HH</td><td>44</td><td>Pedal Hi-hat</td></tr>
+<tr><td>OH</td><td>46</td><td>Open Hi-hat</td></tr>
+<tr><td>CH</td><td>42</td><td>Closed Hi-hat</td></tr>
+<tr><td>TA</td><td>54</td><td>Tambourine</td></tr>
+<tr><td>T1</td><td>50</td><td>High Tom 1</td></tr>
+<tr><td>T2</td><td>48</td><td>High Tom 2</td></tr>
+<tr><td>T3</td><td>47</td><td>Mid Tom 1</td></tr>
+<tr><td>T4</td><td>45</td><td>Mid Tom 2</td></tr>
+<tr><td>T5</td><td>43</td><td>Low Tom 1</td></tr>
+<tr><td>T6</td><td>41</td><td>Low Tom 2</td></tr>
+<tr><td>CC</td><td>49</td><td>Crash Cymbal 1</td></tr>
+<tr><td>C2</td><td>57</td><td>Crash Cymbal 2</td></tr>
+<tr><td>TC</td><td>52</td><td>Chinese Cymbal (Trash)</td></tr>
+<tr><td>RC</td><td>51</td><td>Ride Cymbal 1</td></tr>
+<tr><td>R2</td><td>59</td><td>Ride Cymbal 2</td></tr>
+<tr><td>RB</td><td>53</td><td>Ride Bell</td></tr>
+<tr><td>SC</td><td>55</td><td>Splash Cymbal</td></tr>
+<tr><td>CB</td><td>56</td><td>Cowbell</td></tr>
+<tr><td>HC</td><td>39</td><td>Hand Clap</td></tr>
+</tbody></table>
+</center>
+
+<h2>general midi drummap</h2>
+
+<center>
+<table cellspacing="2" cellpadding="0" border="0">
+<tbody><tr><td><b>note.</b></td><td><b>code.</b></td><td><b>name</b></td></tr>
+<tr><td>B2 </td><td>35</td><td>Bass Drum 2</td></tr>
+<tr><td>C3 </td><td>36</td><td>Bass Drum 1</td></tr>
+<tr><td>C#3 </td><td> 37 </td><td>Side Stick</td></tr>
+<tr><td>D3 </td><td>38</td><td>Snare Drum 1</td></tr>
+<tr><td>D#3</td><td>39</td><td>Hand Clap</td></tr>
+<tr><td>E3 </td><td>40</td><td>Snare Drum 2</td></tr>
+<tr><td>F3 </td><td>41</td><td>Low Tom 2</td></tr>
+<tr><td>F#3</td><td>42</td><td>Closed Hi-hat</td></tr>
+<tr><td>G3 </td><td>43</td><td>Low Tom 1</td></tr>
+<tr><td>G#3</td><td>44</td><td>Pedal Hi-hat</td></tr>
+<tr><td>A3 </td><td>45</td><td>Mid Tom 2</td></tr>
+<tr><td>A#3</td><td>46</td><td>Open Hi-hat</td></tr>
+<tr><td>B3 </td><td>47</td><td>Mid Tom 1</td></tr>
+<tr><td>C4 </td><td>48</td><td>High Tom 2</td></tr>
+<tr><td>C#4</td><td>49</td><td>Crash Cymbal 1</td></tr>
+<tr><td>D4 </td><td>50</td><td>High Tom 1</td></tr>
+<tr><td>D#4</td><td>51</td><td>Ride Cymbal 1</td></tr>
+<tr><td>E4 </td><td>52</td><td>Chinese Cymbal</td></tr>
+<tr><td>F4 </td><td>53</td><td>Ride Bell</td></tr>
+<tr><td>F#4</td><td>54</td><td>Tambourine</td></tr>
+<tr><td>G4 </td><td>55</td><td>Splash Cymbal</td></tr>
+<tr><td>G#4</td><td>56</td><td>Cowbell</td></tr>
+<tr><td>A4 </td><td>57</td><td>Crash Cymbal 2</td></tr>
+<tr><td>A#4</td><td>58</td><td>Vibra Slap</td></tr>
+<tr><td>B4 </td><td>59</td><td>Ride Cymbal 2</td></tr>
+<tr><td>C5 </td><td>60</td><td>High Bongo</td></tr>
+<tr><td>C#5</td><td>61</td><td>Low Bongo</td></tr>
+<tr><td>D5 </td><td>62</td><td>Mute High Conga</td></tr>
+<tr><td>D#5</td><td>63</td><td>Open High Conga</td></tr>
+<tr><td>E5 </td><td>64</td><td>Low Conga</td></tr>
+<tr><td>F5 </td><td>65</td><td>High Timbale</td></tr>
+<tr><td>F#5</td><td>66</td><td>Low Timbale</td></tr>
+<tr><td>G5 </td><td>67</td><td>High Agogo</td></tr>
+<tr><td>G#5</td><td>68</td><td>Low Agogo</td></tr>
+<tr><td>A5 </td><td>69</td><td>Cabasa</td></tr>
+<tr><td>A#5</td><td>70</td><td>Maracas</td></tr>
+<tr><td>B5 </td><td>71</td><td>Short Whistle</td></tr>
+<tr><td>C6 </td><td>72</td><td>Long Whistle</td></tr>
+<tr><td>C#6</td><td>73</td><td>Short Guiro</td></tr>
+<tr><td>D6 </td><td>74</td><td>Long Guiro</td></tr>
+<tr><td>D#6</td><td>75</td><td>Claves</td></tr>
+<tr><td>E6 </td><td>76</td><td>High Wood Block</td></tr>
+<tr><td>F6 </td><td>77</td><td>Low Wood Block</td></tr>
+<tr><td>F#6</td><td>78</td><td>Mute Cuica</td></tr>
+<tr><td>G6 </td><td>79</td><td>Open Cuica</td></tr>
+<tr><td>G#6</td><td>80</td><td>Mute Triangle</td></tr>
+<tr><td>A6 </td><td>81</td><td>Open Triangle</td></tr>
+</tbody></table>
+</center>
+
+</td><td valign="top" width="25%">
+
+<h2>general midi instruments</h2>
+
+<center>
+<table cellspacing="2" cellpadding="0" border="0">
+<tbody><tr><td><b>code.</b></td><td><b>instrument</b></td><td><b>code.</b></td><td><b>instrument</b></td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>PIANO</b></td><td colspan="2"><b>CHROMATIC PERCUSSION</b></td></tr>
+<tr><td>1</td><td>Acoustic Grand   </td><td> 9</td><td>Celesta</td></tr>
+<tr><td>2</td><td>Bright Acoustic  </td><td>10</td><td>Glockenspiel</td></tr>
+<tr><td>3</td><td>Electric Grand   </td><td>11</td><td>Music Box</td></tr>
+<tr><td>4</td><td>Honky-Tonk       </td><td>12</td><td>Vibraphone</td></tr>
+<tr><td>5</td><td>Electric Piano 1 </td><td>13</td><td>Marimba</td></tr>
+<tr><td>6</td><td>Electric Piano 2 </td><td>14</td><td>Xylophone</td></tr>
+<tr><td>7</td><td>Harpsichord      </td><td>15</td><td>Tubular Bells</td></tr>
+<tr><td>8</td><td>Clavinet         </td><td>16</td><td>Dulcimer</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>ORGAN</b>  </td><td colspan="2"> <b>GUITAR</b></td></tr>
+<tr><td>17</td><td>Drawbar Organ    </td><td>25</td><td>Nylon String Guitar</td></tr>
+<tr><td>18</td><td>Percussive Organ </td><td>26</td><td>Steel String Guitar</td></tr>
+<tr><td>19</td><td>Rock Organ       </td><td>27</td><td>Electric Jazz Guitar</td></tr>
+<tr><td>20</td><td>Church Organ     </td><td>28</td><td>Electric Clean Guitar</td></tr>
+<tr><td>21</td><td>Reed Organ       </td><td>29</td><td>Electric Muted Guitar</td></tr>
+<tr><td>22</td><td>Accoridan        </td><td>30</td><td>Overdriven Guitar</td></tr>
+<tr><td>23</td><td>Harmonica        </td><td>31</td><td>Distortion Guitar</td></tr>
+<tr><td>24</td><td>Tango Accordian  </td><td>32</td><td>Guitar Harmonics</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>BASS</b>      </td><td colspan="2"><b>SOLO STRINGS</b></td></tr>
+<tr><td>33</td><td>Acoustic Bass         </td><td>41</td><td>Violin</td></tr>
+<tr><td>34</td><td>Electric Bass(finger) </td><td>42</td><td>Viola</td></tr>
+<tr><td>35</td><td>Electric Bass(pick)   </td><td>43</td><td>Cello</td></tr>
+<tr><td>36</td><td>Fretless Bass         </td><td>44</td><td>Contrabass</td></tr>
+<tr><td>37</td><td>Slap Bass 1           </td><td>45</td><td>Tremolo Strings</td></tr>
+<tr><td>38</td><td>Slap Bass 2           </td><td>46</td><td>Pizzicato Strings</td></tr>
+<tr><td>39</td><td>Synth Bass 1          </td><td>47</td><td>Orchestral Strings</td></tr>
+<tr><td>40</td><td>Synth Bass 2          </td><td>48</td><td>Timpani</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>ENSEMBLE</b></td><td colspan="2"><b>BRASS</b></td></tr>
+<tr><td>49</td><td>String Ensemble 1 </td><td>57</td><td>Trumpet</td></tr>
+<tr><td>50</td><td>String Ensemble 2 </td><td>58</td><td>Trombone</td></tr>
+<tr><td>51</td><td>SynthStrings 1    </td><td>59</td><td>Tuba</td></tr>
+<tr><td>52</td><td>SynthStrings 2    </td><td>60</td><td>Muted Trumpet</td></tr>
+<tr><td>53</td><td>Choir Aahs        </td><td>61</td><td>French Horn</td></tr>
+<tr><td>54</td><td>Voice Oohs        </td><td>62</td><td>Brass Section</td></tr>
+<tr><td>55</td><td>Synth Voice       </td><td>63</td><td>SynthBrass 1</td></tr>
+<tr><td>56</td><td>Orchestra Hit     </td><td>64</td><td>SynthBrass 2</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>REED</b></td><td colspan="2"><b>PIPE</b></td></tr>
+<tr><td>65</td><td>Soprano Sax    </td><td>73</td><td>Piccolo</td></tr>
+<tr><td>66</td><td>Alto Sax       </td><td>74</td><td>Flute</td></tr>
+<tr><td>67</td><td>Tenor Sax      </td><td>75</td><td>Recorder</td></tr>
+<tr><td>68</td><td>Baritone Sax   </td><td>76</td><td>Pan Flute</td></tr>
+<tr><td>69</td><td>Oboe           </td><td>77</td><td>Blown Bottle</td></tr>
+<tr><td>70</td><td>English Horn   </td><td>78</td><td>Skakuhachi</td></tr>
+<tr><td>71</td><td>Bassoon        </td><td>79</td><td>Whistle</td></tr>
+<tr><td>72</td><td>Clarinet       </td><td>80</td><td>Ocarina</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>SYNTH LEAD</b></td><td colspan="2"><b>SYNTH PAD</b></td></tr>
+<tr><td>81</td><td>Lead 1 (square)   </td><td>89</td><td>Pad 1 (new age)</td></tr>
+<tr><td>82</td><td>Lead 2 (sawtooth) </td><td>90</td><td>Pad 2 (warm)</td></tr>
+<tr><td>83</td><td>Lead 3 (calliope) </td><td>91</td><td>Pad 3 (polysynth)</td></tr>
+<tr><td>84</td><td>Lead 4 (chiff)    </td><td>92</td><td>Pad 4 (choir)</td></tr>
+<tr><td>85</td><td>Lead 5 (charang)  </td><td>93</td><td>Pad 5 (bowed)</td></tr>
+<tr><td>86</td><td>Lead 6 (voice)    </td><td>94</td><td>Pad 6 (metallic)</td></tr>
+<tr><td>87</td><td>Lead 7 (fifths)   </td><td>95</td><td>Pad 7 (halo)</td></tr>
+<tr><td>88</td><td>Lead 8 (bass+lead)</td><td>96</td><td>Pad 8 (sweep)</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>SYNTH EFFECTS</b></td><td colspan="2"><b>ETHNIC</b></td></tr>
+<tr><td>97</td><td>FX 1 (rain)       </td><td>105</td><td>Sitar</td></tr>
+<tr><td>98</td><td>FX 2 (soundtrack) </td><td>106</td><td>Banjo</td></tr>
+<tr><td>99</td><td>FX 3 (crystal)    </td><td>107</td><td>Shamisen</td></tr>
+<tr><td>100</td><td>FX 4 (atmosphere) </td><td>108</td><td>Koto</td></tr>
+<tr><td>101</td><td>FX 5 (brightness) </td><td>109</td><td>Kalimba</td></tr>
+<tr><td>102</td><td>FX 6 (goblins)    </td><td>110</td><td>Bagpipe</td></tr>
+<tr><td>103</td><td>FX 7 (echoes)     </td><td>111</td><td>Fiddle</td></tr>
+<tr><td>104</td><td>FX 8 (sci-fi)     </td><td>112</td><td>Shanai</td></tr>
+<tr><td colspan="4"> </td></tr>
+<tr><td colspan="2"><b>PERCUSSIVE</b></td><td colspan="2"><b>SOUND EFFECTS</b></td></tr>
+<tr><td>113</td><td>Tinkle Bell     </td><td>121</td><td>Guitar Fret Noise</td></tr>
+<tr><td>114</td><td>Agogo           </td><td>122</td><td>Breath Noise</td></tr>
+<tr><td>115</td><td>Steel Drums     </td><td>123</td><td>Seashore</td></tr>
+<tr><td>116</td><td>Woodblock       </td><td>124</td><td>Bird Tweet</td></tr>
+<tr><td>117</td><td>Taiko Drum      </td><td>125</td><td>Telephone Ring</td></tr>
+<tr><td>118</td><td>Melodic Tom     </td><td>126</td><td>Helicopter</td></tr>
+<tr><td>119</td><td>Synth Drum      </td><td>127</td><td>Applause</td></tr>
+<tr><td> 120 </td><td>Reverse Cymbal  </td><td> 128 </td><td>Gunshot</td></tr>
+</tbody></table>
+</center>
+
+</td></tr></tbody></table>
+
+
+</p><h2>midi controllers (ctrl)</h2>
+
+<p>Below, a list of values to use in the ctrla,b command ( a &amp; b between 0 and 127 only).
+</p><p>Note: when two "1st Value" are given (like: 0 / 32), the first is
+ used for the most significant byte (MSB), the second for the least 
+significant byte (LSB). Use the MSB in priority.
+</p><p></p><center>
+<table cellspacing="2" cellpadding="0" border="0">
+<tbody><tr><td><b>1st Value</b></td><td><b>Controller Type</b></td><td><b>2nd Value</b></td><td><b>Remark</b></td></tr>
+<tr><td>0 / 32</td><td>Bank Select</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>1 / 33</td><td>Modulation</td><td>0 to 127</td><td>vibrato or tremolo...</td></tr>
+<tr><td>2 / 34</td><td>Breath Controller</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>4 / 36</td><td>Foot Controller</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>5 / 37</td><td>Portamento Time</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>6 / 38</td><td>Data Entry</td><td>0 to 127</td><td>see NRPN/RPN <i>(not used in minimal GM)</i></td></tr>
+<tr><td>7 / 39</td><td>Main Volume</td><td>0 to 127</td><td></td></tr>
+<tr><td>8 / 40</td><td>Balance</td><td>0-63=left, 64=center, 65-127=right</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>10 / 42</td><td>Pan</td><td>0-63=left, 64=center, 65-127=right</td><td></td></tr>
+<tr><td>11 / 43</td><td>Expression Controller</td><td>0 to 127</td><td></td></tr>
+<tr><td>12 / 44</td><td>Effect Control 1</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>13 / 45</td><td>Effect Control 2</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>16 to 19</td><td>General-Purpose Controllers 1 to 4</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>64</td><td>Damper pedal</td><td>0-63=off, 64-127=on</td><td></td></tr>
+<tr><td>65</td><td>Portamento</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>66</td><td>Sustenuto</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>67</td><td>Soft Pedal</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>68</td><td>Legato Footswitch</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>69</td><td>Hold 2</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>70</td><td>Sound Controller 1 (variation)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>71</td><td>Sound Controller 2 (sound)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>72</td><td>Sound Controller 3 (release time)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>73</td><td>Sound Controller 4 (attack time)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>74</td><td>Sound Controller 5 (brilliance)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>75 to 79</td><td>Sound Controller 6 to 10</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>80 to 83</td><td>General-Purpose Controllers 5 to 8</td><td>0-63=off, 64-127=on</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>84</td><td>Portamento Control</td><td></td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>91</td><td>Effects 1 Depth (reverb/delay)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>92</td><td>Effects 2 Depth (tremolo)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>93</td><td>Effects 3 Depth (chorus)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>94</td><td>Effects 4 Depth (vibrato)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>95</td><td>Effects 5 Depth (phaser)</td><td>0 to 127</td><td><i>(not used in minimal GM)</i></td></tr>
+<tr><td>96</td><td>Data Increment +1</td><td>not used (0)</td><td>see NRPN/RPN <i>(not used in minimal GM)</i></td></tr>
+<tr><td>97</td><td>Data Decrement -1</td><td>not used (0)</td><td>see NRPN/RPN <i>(not used in minimal GM)</i></td></tr>
+<tr><td>99 / 98</td><td>Non-Registered Parameter Number (NRPN)</td><td>0 to 127</td><td>use with 6/38 or 96-97 <i>(not used in minimal GM)</i></td></tr>
+<tr><td>101 / 100</td><td>Registered Parameter Number (RPN)</td><td>0 to 127</td><td>use with 6/38 or 96-97 <i>(not used in minimal GM)</i></td></tr>
+<tr><td>120</td><td>All Sound Off</td><td>not used (0)</td><td></td></tr>
+<tr><td>121</td><td>All Controller Off</td><td>not used (0)</td><td></td></tr>
+<tr><td>122</td><td>Local keyboard on/off</td><td>0-63=off, 64-127=on</td><td></td></tr>
+<tr><td>123</td><td>All Notes Off</td><td>not used (0)</td><td></td></tr>
+<tr><td>124</td><td>Midi Mode Omni Off</td><td>not used (0)</td><td></td></tr>
+<tr><td>125</td><td>Midi Mode Omni On</td><td>not used (0)</td><td></td></tr>
+<tr><td>126</td><td>Midi Mode Mono</td><td>not used (0)</td><td></td></tr>
+<tr><td>127</td><td>Midi Mode Poly</td><td>not used (0)</td><td></td></tr>
+</tbody></table>
+
+<h2>Registered Parameter Numbers (RPN - ctrl 101/100 )</h2>
+
+<p><table cellspacing="2" cellpadding="0" border="0">
+<tbody><tr><td><b>MSB/LSB<br>(101/100)</b></td><td><b>Description</b></td></tr>
+<tr><td>0 / 0</td><td>Pitch Bend Sensitivity (MSB = number of semitones, LSB = cents)</td></tr>
+<tr><td>0 / 1</td><td>Fine Tuning (MSB = number of semitones with 64=A440, LSB = cents) </td></tr>
+<tr><td>0 / 2</td><td>Coarse Tuning (MSB = number of semitones with 64=A440, no LSB) </td></tr>
+<tr><td>0 / 3</td><td>Tuning Program Select <i>(part of the MIDI Tuning Standard, not used in minimal GM)</i></td></tr>
+<tr><td>0 / 4</td><td>Tuning Bank Select <i>(part of the MIDI Tuning Standard, not used in minimal GM)</i></td></tr>
+<tr><td>127 / 127</td><td>RPN Reset (no data entry needed)</td></tr>
+</tbody></table>
+
+</p><p>Example: to set a Fine Tuning of -1.5 half-tones (-2+50%) versus 
+A440, use the following commands: ctrl101,0 ctrl100,1 ctrl6,62 ctrl38,50
+
+
+</p><p><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad.php">back to musicpad</a>
+
+</p><h2>musicpad vs polymath</h2>
+
+<p>musicpad was initially inspired by <a href="https://web.archive.org/web/20131211235440/http://www.panix.com/~jens/polymath.par">polymath.cgi</a>. Here is a comparaison of syntaxes on well-chosen polyrythms...
+
+<table cellspacing="5">
+<tbody><tr><td align="center"><b>polymath</b></td><td align="center"><b>musicpad</b></td></tr>
+<tr><td align="center" colspan="2"><b>Meshuggah - New Millenium Cyanide Christ intro</b></td></tr>
+<tr><td valign="top">
+<pre>(t, 150) (n, CR CH SD BD)
+((1 1P*3)*2)*2 
+|((4P 4*15)*2)*2 
+|(2P 1*7 2)*2 
+|((P, 16, (xxx 3 2 2)*2 xxx)*5 (P, 16, xxx 3 2 2 xxx))*2 
+</pre>
+
+</td><td valign="top">
+<pre>tempo150
+(
+|0 iCC (1 P*3)*2
+|  iCH (P/4 x*15)*2
+|  iSD (P/2 x)*8
+|  iBD o/16 ((xxxx--x-x-)*2 xxx)*5 xxxx--x-x-xxx
+) *2
+</pre>
+<i>Same with instruments &amp; macros:</i>
+<pre>tempo150
+m$BD1(xxxx--x-x-)
+m$G1(A+/16 A+ A+ / C/8 \ P/16 A+ - A+ -)
+m$G2(($G1*2 xxx)*5 $G1 xxx)
+(
+|0 iCC (1 P*3)*2
+|  iCH (P/4 x*15)*2
+|  iSD (P/2 x)*8
+|  iBD o/16 ($BD1*2 xxx)*5 $BD1 xxx
+|  ch1 i34 n1 $G2 |  ch2 i82 n2 $G2 |  ch2 n2 t+7 $G2
+) *2
+</pre>
+
+</td></tr></tbody></table>
+
+</p><p><a href="https://web.archive.org/web/20131211235440/http://l01c.ouvaton.org/musicpad.php">back to musicpad</a>
+
+</p><h2>musicpad history</h2>
+
+<table><tbody><tr><td>
+<br>v2.22 - 17 Aug 2006 - minor interface changes
+<br>v2.21 - 25 Aug 2004 - added tom mode, and tomson / tomsoff commands, and the q=g parameter for loose &amp; velvar
+<br>v2.2 - 17 Aug 2004 - added chords [...], strum and tuning commands.
+<br>v2.1 - 16 Aug 2004 - corrected some bugs (WMP error, b as flat...). 
+Added the guitar mode and the nt, pitch, sysex and ctrl commands.
+<br>v2.0 - 11 Aug 2004 - a new interface with login &amp; save.
+<br>v1.4 - 10 Aug 2004 - deleted o, changed n to o , n used for new "relative note" command
+<br>v1.3 - 06 Aug 2004 - added dEbUgMaX, loose and velvar commands
+<br>v1.2 - 05 Aug 2004 - added dEbUg, '=' and $mrnd commands
+<br>v1.1 - 04 Aug 2004 - added global commands
+<br>v1.0 - 03 Aug 2004 - initial release
+</td></tr></tbody></table>
+
+<p><small>musicpad v2.22 © <a href="https://web.archive.org/web/20131211235440/mailto:loicprot_AT_yahoo.com">loic prot</a> 2006. largely inspired by <a href="https://web.archive.org/web/20131211235440/http://www.panix.com/~jens/polymath.par">polymath.cgi</a>, © jens johansson 2001</small>
+
+</p></center>
+<!--
+     FILE ARCHIVED ON 23:54:40 Dec 11, 2013 AND RETRIEVED FROM THE
+     INTERNET ARCHIVE ON 08:46:52 May 11, 2026.
+     JAVASCRIPT APPENDED BY WAYBACK MACHINE, COPYRIGHT INTERNET ARCHIVE.
+
+     ALL OTHER CONTENT MAY ALSO BE PROTECTED BY COPYRIGHT (17 U.S.C.
+     SECTION 108(a)(3)).
+-->
+<!--
+playback timings (ms):
+  captures_list: 0.481
+  exclusion.robots: 0.039
+  exclusion.robots.policy: 0.028
+  esindex: 0.009
+  cdx.remote: 25.452
+  LoadShardBlock: 158.05 (3)
+  PetaboxLoader3.datanode: 66.538 (4)
+  PetaboxLoader3.resolve: 94.031 (3)
+  load_resource: 99.732
+  nav: 0.116 (6)
+--></center></body><grammarly-desktop-integration data-grammarly-shadow-root="true"></grammarly-desktop-integration></html>
