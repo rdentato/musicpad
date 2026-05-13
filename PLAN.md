@@ -26,10 +26,10 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - [x] `src/musicpad.html` includes `src/musicpad.js`
 - [x] Central textarea with placeholder/example
 - [x] Download button → generate MIDI → trigger Blob download
-- [x] Load button → read local text file into textarea
+- [x] Load menu with Local file loading and bundled Song List loading
 - [x] Save button → download textarea content as `musicpad.mpd`
 - [x] Tutorial and reference content bundled into `src/musicpad.html` and toggled with page buttons
-- [ ] Final packaging into one self-contained HTML file
+- [x] Final packaging into one self-contained HTML file
 
 ### M3: Polish & Verify
 - [x] Add automated tests for sample Musicpad strings and selected `docs/songs/*.mpd`

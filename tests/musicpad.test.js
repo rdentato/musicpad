@@ -24,7 +24,7 @@ const EXPECTED_SONGS = {
   'melo1.mpd': { bytes: 63549, sha256: 'e29c6c35b89fc0519bf4f850cc47673e489d7bc7cfb7cddf47a433e1b2f4bcf8' },
   'midi test.mpd': { bytes: 8903, sha256: 'f06cd008ac131dbd0ad1cabc5011c10d72587caeab06ce31b5ec788887fd894a' },
   'random fun.mpd': { bytes: 8253, sha256: 'c0d94ff25b3dfccaff68367e723e838fb74f9c6f389d942803be91180b33e7a6' },
-  'sth.mpd': { bytes: 822, sha256: '674ed740bd63e117e56f6e9f3965b2bd0c0f3c85f9b4a90fe65dc431776cf915' },
+  'Starways to Heaven.mpd': { bytes: 822, sha256: '674ed740bd63e117e56f6e9f3965b2bd0c0f3c85f9b4a90fe65dc431776cf915' },
   'weird polyrythm.mpd': { bytes: 2596, sha256: 'a68dc5ccefc7ba14b3cc7058690d1ae4e17f542a6998183af856969153202f5e' }
 };
 
