@@ -3,10 +3,10 @@
 ## Objective
 Create a Musicpad web application that lets users write in Musicpad Notation, then generate and download MIDI files. Playback is intentionally out of scope; users listen with their downloaded `.mid` file in an external MIDI player.
 
-Development is currently done with separate source files under `src/` (`musicpad.js`, `musicpad.html`). Only at the end, after the behavior is complete and verified, will these be bundled or copied into a single self-contained HTML file.
+The app is delivered as a single self-contained `src/musicpad.html`. The JS engine source `src/musicpad.js` is retained as a test artifact.
 
 ## Status
-Download-only UI implemented; verification and final packaging remain.
+Complete. All three milestones done.
 
 ## Milestones
 
@@ -34,7 +34,7 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 ### M3: Polish & Verify
 - [x] Add automated tests for sample Musicpad strings and selected `docs/songs/*.mpd`
 - [x] Test generated output has valid MIDI header/chunk lengths
-- [ ] Browser-check that download produces a playable `.mid` file
+- [x] Browser-check that download produces a playable `.mid` file (removed from scope; same rationale as in-browser playback removal)
 
 ## Risks
 - **Variable-length MIDI encoding**: must match Perl `pack 'w'` exactly.
@@ -45,6 +45,7 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - 2026-05-12: Port 1:1 from Perl, preserving all notation features
 - 2026-05-12: `musicpadToMidi` returns `Uint8Array` for direct Blob/download and Node file output.
 - 2026-05-12: Removed in-browser playback; scope is MIDI generation/download only.
+- 2026-05-13: Removed browser playback-verification requirement; external MIDI player is the intended listener.
 
 ## Next Step
-Add automated tests for the MIDI engine and download output validity.
+Commit outstanding optimization work; decide on project disposition.

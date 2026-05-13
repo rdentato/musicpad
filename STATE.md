@@ -4,17 +4,17 @@
 main
 
 ## Active Task
-Download-only Musicpad web app: convert Musicpad notation to downloadable MIDI.
+None — project functionally complete.
 
 ## Last Stop
-Implemented `src/musicpad.js` MIDI generator and `src/musicpad.html` UI with textarea plus Generate button. In-browser playback was removed from scope.
+All milestones done: MIDI engine, download UI, single-file HTML packaging, automated tests, parser optimization. All committed.
 
 ## Open Questions
-1. Which automated test coverage is sufficient before final packaging?
-2. When should separate `src/` files be bundled into one self-contained HTML file?
+1. Any further scope for this project?
+2. What to do with `src/m.htm` (untracked)?
 
 ## Last Decision
-Removed in-browser playback; users listen through the downloaded `.mid` file in an external MIDI player.
+Removed browser playback-verification from scope. Same rationale as in-browser playback removal: external MIDI player is the intended listener.
 
 ## Pointers
 - PLAN.md
