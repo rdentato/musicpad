@@ -9,6 +9,160 @@
 
   const DRUM_MAP = numberMap('BD 36 B2 35 SD 38 S2 40 RS 37 HH 44 OH 46 CH 42 TA 54 T1 50 T2 48 T3 47 T4 45 T5 43 T6 41 CC 49 C2 57 TC 52 RC 51 R2 59 RB 53 SC 55 CB 56 HC 39');
   const NOTE_MAP = numberMap('C- -1 CB -1 C 0 C+ 1 C# 1 D- 1 DB 1 D 2 D# 3 D+ 3 EB 3 E- 3 E 4 E+ 5 E# 5 F- 4 FB 4 F 5 F+ 6 F# 6 G- 6 GB 6 G 7 G+ 8 G# 8 A- 8 AB 8 A 9 A+ 10 A# 10 B- 10 BB 10 B 11 B+ 12 B# 12');
+  const INSTRUMENT_MAP = instrumentMap(`
+1 AcousticGrandPiano
+2 BrightAcousticPiano
+3 ElectricGrandPiano
+4 HonkyTonkPiano
+5 ElectricPiano1
+6 ElectricPiano2
+7 Harpsichord
+8 Clavinet
+9 Celesta
+10 Glockenspiel
+11 MusicBox
+12 Vibraphone
+13 Marimba
+14 Xylophone
+15 TubularBells
+16 Dulcimer
+17 DrawbarOrgan
+18 PercussiveOrgan
+19 RockOrgan
+20 ChurchOrgan
+21 ReedOrgan
+22 Accordion
+23 Harmonica
+24 TangoAccordion
+25 NylonGuitar
+26 SteelGuitar
+27 JazzGuitar
+28 CleanGuitar
+29 MutedGuitar
+30 OverdrivenGuitar
+31 DistortionGuitar
+32 GuitarHarmonics
+33 AcousticBass
+34 ElectricBassFinger
+35 ElectricBassPick
+36 FretlessBass
+37 SlapBass1
+38 SlapBass2
+39 SynthBass1
+40 SynthBass2
+41 Violin
+42 Viola
+43 Cello
+44 Contrabass
+45 TremoloStrings
+46 PizzicatoStrings
+47 OrchestralHarp
+48 Timpani
+49 StringEnsemble1
+50 StringEnsemble2
+51 SynthStrings1
+52 SynthStrings2
+53 ChoirAahs
+54 VoiceOohs
+55 SynthVoice
+56 OrchestraHit
+57 Trumpet
+58 Trombone
+59 Tuba
+60 MutedTrumpet
+61 FrenchHorn
+62 BrassSection
+63 SynthBrass1
+64 SynthBrass2
+65 SopranoSax
+66 AltoSax
+67 TenorSax
+68 BaritoneSax
+69 Oboe
+70 EnglishHorn
+71 Bassoon
+72 Clarinet
+73 Piccolo
+74 Flute
+75 Recorder
+76 PanFlute
+77 BlownBottle
+78 Shakuhachi
+79 Whistle
+80 Ocarina
+81 Lead1
+81 LeadSquare
+82 Lead2
+82 LeadSawtooth
+83 Lead3
+83 LeadCalliope
+84 Lead4
+84 LeadChiff
+85 Lead5
+85 LeadCharang
+86 Lead6
+86 LeadVoice
+87 Lead7
+87 LeadFifths
+88 Lead8
+88 LeadBass
+89 Pad1
+89 PadNewAge
+90 Pad2
+90 PadWarm
+91 Pad3
+91 PadPolysynth
+92 Pad4
+92 PadChoir
+93 Pad5
+93 PadBowed
+94 Pad6
+94 PadMetallic
+95 Pad7
+95 PadHalo
+96 Pad8
+96 PadSweep
+97 FX1
+97 FXRain
+98 FX2
+98 FXSoundtrack
+99 FX3
+99 FXCrystal
+100 FX4
+100 FXAtmosphere
+101 FX5
+101 FXBrightness
+102 FX6
+102 FXGoblins
+103 FX7
+103 FXEchoes
+104 FX8
+104 FXSciFi
+105 Sitar
+106 Banjo
+107 Shamisen
+108 Koto
+109 Kalimba
+110 Bagpipe
+111 Fiddle
+112 Shanai
+113 TinkleBell
+114 Agogo
+115 SteelDrums
+116 Woodblock
+117 TaikoDrum
+118 MelodicTom
+119 SynthDrum
+120 ReverseCymbal
+121 GuitarFretNoise
+122 BreathNoise
+123 Seashore
+124 BirdTweet
+125 TelephoneRing
+126 Helicopter
+127 Applause
+128 Gunshot
+`);
 
   const GUITAR_CHORDS = {
     'A/AB': [null, 0, 2, 1, 2, 0],
@@ -1426,9 +1580,18 @@
           continue;
         }
         if (lower[0] === 'i' && isDigitCode(lower.charCodeAt(1))) {
+          const program = Number(command.slice(1));
           pushVarLen(track, 0);
-          pushBytes(track, 0xC0 | chan, Number(command.slice(1)) - 1);
+          pushBytes(track, 0xC0 | chan, program === 0 ? 0 : program - 1);
           continue;
+        }
+        if (lower[0] === 'i' && command.length > 1) {
+          const program = INSTRUMENT_MAP[command.slice(1).toUpperCase()];
+          if (program != null) {
+            pushVarLen(track, 0);
+            pushBytes(track, 0xC0 | chan, program);
+            continue;
+          }
         }
         if (lower[0] === 'i' && command.length >= 3) {
           const drum = DRUM_MAP[command.slice(1, 3).toUpperCase()];
@@ -1800,6 +1963,14 @@
     for (let i = 0; i < value.length; i += 1) {
       const char = value[i];
       const lower = char.toLowerCase();
+      if (lower === 'i') {
+        const match = value.slice(i).match(/^i([A-Z0-9]+)/i);
+        if (match && INSTRUMENT_MAP[match[1].toUpperCase()] != null) {
+          out += match[0];
+          i += match[0].length - 1;
+          continue;
+        }
+      }
       if (char === '(' || char === ')') continue;
       if (lower === 'x' || char === '-' || char === '=') out += ` ${char} `;
       else out += char;
@@ -1865,6 +2036,16 @@
     const parts = text.trim().split(/\s+/);
     const out = Object.create(null);
     for (let i = 0; i < parts.length; i += 2) out[parts[i]] = Number(parts[i + 1]);
+    return out;
+  }
+
+  function instrumentMap(text) {
+    const out = Object.create(null);
+    const lines = text.trim().split(/\n/);
+    for (const line of lines) {
+      const match = line.match(/^(\d+)\s+(\S+)$/);
+      if (match) out[match[2].toUpperCase()] = Number(match[1]) - 1;
+    }
     return out;
   }
 
