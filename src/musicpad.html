@@ -350,10 +350,10 @@ C/4 E G/2 P/4 F/8 Eb C# / C</pre>
 
         <section>
           <h2>8. Drums</h2>
-          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note.</p>
-      <pre>iBD o/16 xx-xxx--
-| iSD o/16 --x---xx
-| iHH o/16 -x-x-x-x</pre>
+          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note. You can also use the compact full drum names from the drum list, such as <code>iBassDrum1</code>, <code>iSnareDrum1</code>, and <code>iPedalHiHat</code>.</p>
+      <pre>iBassDrum1 o/16 xx-xxx--
+| iSnareDrum1 o/16 --x---xx
+| iPedalHiHat o/16 -x-x-x-x</pre>
           <p>Each drum voice is easiest to read and control on its own track.</p>
         </section>
 
@@ -561,7 +561,7 @@ $riff $riff*3</pre>
             <tr><td><code>chN</code></td><td>Set MIDI channel N, 1-based.</td></tr>
             <tr><td><code>iN</code></td><td>Set General MIDI program N. The normal list is 1..128; <code>i0</code> is also accepted as an alias for program 1.</td></tr>
             <tr><td><code>iInstrumentName</code></td><td>Set a General MIDI program by compact name, for example <code>iAcousticGrandPiano</code> or <code>iNylonGuitar</code>. Names are case-insensitive and must be written without spaces.</td></tr>
-            <tr><td><code>iBD</code>, <code>iSD</code>, ...</td><td>Select a drum shortcut, set channel 10, and set the default drum note.</td></tr>
+            <tr><td><code>iBD</code>, <code>iBassDrum1</code>, ...</td><td>Select a drum by short code or compact full name, set channel 10, and set the default drum note. Drum names are case-insensitive and must be written without spaces.</td></tr>
             <tr><td><code>vN</code></td><td>Set velocity, max 127.</td></tr>
             <tr><td><code>uN</code></td><td>Duty: note-on portion of the slot in percent.</td></tr>
             <tr><td><code>t+N</code>, <code>t-N</code>, <code>t0</code></td><td>Transpose following notes.</td></tr>
@@ -597,21 +597,22 @@ $riff $riff*3</pre>
         </section>
 
         <section id="drums">
-          <h2>Drum shortcuts</h2>
+          <h2>Drum shortcuts and accepted names</h2>
+          <p>Use either form after <code>i</code>: the short code or the compact drum name. For example, <code>iBD</code> and <code>iBassDrum1</code> are equivalent.</p>
           <table>
-            <tr><th>Code</th><th>MIDI note</th><th>Name</th><th>Code</th><th>MIDI note</th><th>Name</th></tr>
-            <tr><td>BD</td><td>36</td><td>Bass Drum 1</td><td>B2</td><td>35</td><td>Bass Drum 2</td></tr>
-            <tr><td>SD</td><td>38</td><td>Snare Drum 1</td><td>S2</td><td>40</td><td>Snare Drum 2</td></tr>
-            <tr><td>RS</td><td>37</td><td>Side Stick</td><td>HC</td><td>39</td><td>Hand Clap</td></tr>
-            <tr><td>HH</td><td>44</td><td>Pedal Hi-hat</td><td>CH</td><td>42</td><td>Closed Hi-hat</td></tr>
-            <tr><td>OH</td><td>46</td><td>Open Hi-hat</td><td>TA</td><td>54</td><td>Tambourine</td></tr>
-            <tr><td>T1</td><td>50</td><td>High Tom 1</td><td>T2</td><td>48</td><td>High Tom 2</td></tr>
-            <tr><td>T3</td><td>47</td><td>Mid Tom 1</td><td>T4</td><td>45</td><td>Mid Tom 2</td></tr>
-            <tr><td>T5</td><td>43</td><td>Low Tom 1</td><td>T6</td><td>41</td><td>Low Tom 2</td></tr>
-            <tr><td>CC</td><td>49</td><td>Crash Cymbal 1</td><td>C2</td><td>57</td><td>Crash Cymbal 2</td></tr>
-            <tr><td>TC</td><td>52</td><td>Chinese Cymbal</td><td>RC</td><td>51</td><td>Ride Cymbal 1</td></tr>
-            <tr><td>R2</td><td>59</td><td>Ride Cymbal 2</td><td>RB</td><td>53</td><td>Ride Bell</td></tr>
-            <tr><td>SC</td><td>55</td><td>Splash Cymbal</td><td>CB</td><td>56</td><td>Cowbell</td></tr>
+            <tr><th>Code</th><th>MIDI note</th><th>Accepted name</th><th>Code</th><th>MIDI note</th><th>Accepted name</th></tr>
+            <tr><td>BD</td><td>36</td><td>BassDrum1</td><td>B2</td><td>35</td><td>BassDrum2</td></tr>
+            <tr><td>SD</td><td>38</td><td>SnareDrum1</td><td>S2</td><td>40</td><td>SnareDrum2</td></tr>
+            <tr><td>RS</td><td>37</td><td>SideStick</td><td>HC</td><td>39</td><td>HandClap</td></tr>
+            <tr><td>HH</td><td>44</td><td>PedalHiHat</td><td>CH</td><td>42</td><td>ClosedHiHat</td></tr>
+            <tr><td>OH</td><td>46</td><td>OpenHiHat</td><td>TA</td><td>54</td><td>Tambourine</td></tr>
+            <tr><td>T1</td><td>50</td><td>HighTom1</td><td>T2</td><td>48</td><td>HighTom2</td></tr>
+            <tr><td>T3</td><td>47</td><td>MidTom1</td><td>T4</td><td>45</td><td>MidTom2</td></tr>
+            <tr><td>T5</td><td>43</td><td>LowTom1</td><td>T6</td><td>41</td><td>LowTom2</td></tr>
+            <tr><td>CC</td><td>49</td><td>CrashCymbal1</td><td>C2</td><td>57</td><td>CrashCymbal2</td></tr>
+            <tr><td>TC</td><td>52</td><td>ChineseCymbal</td><td>RC</td><td>51</td><td>RideCymbal1</td></tr>
+            <tr><td>R2</td><td>59</td><td>RideCymbal2</td><td>RB</td><td>53</td><td>RideBell</td></tr>
+            <tr><td>SC</td><td>55</td><td>SplashCymbal</td><td>CB</td><td>56</td><td>Cowbell</td></tr>
           </table>
         </section>
 
@@ -714,7 +715,32 @@ $riff $riff*3</pre>
 
   const VERSION = 'made with musicpad-js';
 
-  const DRUM_MAP = numberMap('BD 36 B2 35 SD 38 S2 40 RS 37 HH 44 OH 46 CH 42 TA 54 T1 50 T2 48 T3 47 T4 45 T5 43 T6 41 CC 49 C2 57 TC 52 RC 51 R2 59 RB 53 SC 55 CB 56 HC 39');
+  const DRUM_MAP = drumMap(`
+BD 36 BassDrum1
+SD 38 SnareDrum1
+RS 37 SideStick
+HH 44 PedalHiHat
+OH 46 OpenHiHat
+T1 50 HighTom1
+T3 47 MidTom1
+T5 43 LowTom1
+CC 49 CrashCymbal1
+TC 52 ChineseCymbal
+R2 59 RideCymbal2
+SC 55 SplashCymbal
+B2 35 BassDrum2
+S2 40 SnareDrum2
+HC 39 HandClap
+CH 42 ClosedHiHat
+TA 54 Tambourine
+T2 48 HighTom2
+T4 45 MidTom2
+T6 41 LowTom2
+C2 57 CrashCymbal2
+RC 51 RideCymbal1
+RB 53 RideBell
+CB 56 Cowbell
+`);
   const NOTE_MAP = numberMap('C- -1 CB -1 C 0 C+ 1 C# 1 D- 1 DB 1 D 2 D# 3 D+ 3 EB 3 E- 3 E 4 E+ 5 E# 5 F- 4 FB 4 F 5 F+ 6 F# 6 G- 6 GB 6 G 7 G+ 8 G# 8 A- 8 AB 8 A 9 A+ 10 A# 10 B- 10 BB 10 B 11 B+ 12 B# 12');
   const INSTRUMENT_MAP = instrumentMap(`
 1 AcousticGrandPiano
@@ -2293,6 +2319,15 @@ $riff $riff*3</pre>
           continue;
         }
         if (lower[0] === 'i' && command.length > 1) {
+          const drum = DRUM_MAP[command.slice(1).toUpperCase()];
+          if (drum != null) {
+            note = drum;
+            chan = (10 - 1) & 0xF;
+            chord = [note];
+            continue;
+          }
+        }
+        if (lower[0] === 'i' && command.length > 1) {
           const program = INSTRUMENT_MAP[command.slice(1).toUpperCase()];
           if (program != null) {
             pushVarLen(track, 0);
@@ -2672,7 +2707,7 @@ $riff $riff*3</pre>
       const lower = char.toLowerCase();
       if (lower === 'i') {
         const match = value.slice(i).match(/^i([A-Z0-9]+)/i);
-        if (match && INSTRUMENT_MAP[match[1].toUpperCase()] != null) {
+        if (match && (INSTRUMENT_MAP[match[1].toUpperCase()] != null || DRUM_MAP[match[1].toUpperCase()] != null)) {
           out += match[0];
           i += match[0].length - 1;
           continue;
@@ -2743,6 +2778,20 @@ $riff $riff*3</pre>
     const parts = text.trim().split(/\s+/);
     const out = Object.create(null);
     for (let i = 0; i < parts.length; i += 2) out[parts[i]] = Number(parts[i + 1]);
+    return out;
+  }
+
+  function drumMap(text) {
+    const out = Object.create(null);
+    const lines = text.trim().split(/\n/);
+    for (const line of lines) {
+      const match = line.match(/^(\S+)\s+(\d+)\s+(\S+)$/);
+      if (match) {
+        const note = Number(match[2]);
+        out[match[1].toUpperCase()] = note;
+        out[match[3].toUpperCase()] = note;
+      }
+    }
     return out;
   }
 

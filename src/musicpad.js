@@ -7,7 +7,32 @@
 
   const VERSION = 'made with musicpad-js';
 
-  const DRUM_MAP = numberMap('BD 36 B2 35 SD 38 S2 40 RS 37 HH 44 OH 46 CH 42 TA 54 T1 50 T2 48 T3 47 T4 45 T5 43 T6 41 CC 49 C2 57 TC 52 RC 51 R2 59 RB 53 SC 55 CB 56 HC 39');
+  const DRUM_MAP = drumMap(`
+BD 36 BassDrum1
+SD 38 SnareDrum1
+RS 37 SideStick
+HH 44 PedalHiHat
+OH 46 OpenHiHat
+T1 50 HighTom1
+T3 47 MidTom1
+T5 43 LowTom1
+CC 49 CrashCymbal1
+TC 52 ChineseCymbal
+R2 59 RideCymbal2
+SC 55 SplashCymbal
+B2 35 BassDrum2
+S2 40 SnareDrum2
+HC 39 HandClap
+CH 42 ClosedHiHat
+TA 54 Tambourine
+T2 48 HighTom2
+T4 45 MidTom2
+T6 41 LowTom2
+C2 57 CrashCymbal2
+RC 51 RideCymbal1
+RB 53 RideBell
+CB 56 Cowbell
+`);
   const NOTE_MAP = numberMap('C- -1 CB -1 C 0 C+ 1 C# 1 D- 1 DB 1 D 2 D# 3 D+ 3 EB 3 E- 3 E 4 E+ 5 E# 5 F- 4 FB 4 F 5 F+ 6 F# 6 G- 6 GB 6 G 7 G+ 8 G# 8 A- 8 AB 8 A 9 A+ 10 A# 10 B- 10 BB 10 B 11 B+ 12 B# 12');
   const INSTRUMENT_MAP = instrumentMap(`
 1 AcousticGrandPiano
@@ -1586,6 +1611,15 @@
           continue;
         }
         if (lower[0] === 'i' && command.length > 1) {
+          const drum = DRUM_MAP[command.slice(1).toUpperCase()];
+          if (drum != null) {
+            note = drum;
+            chan = (10 - 1) & 0xF;
+            chord = [note];
+            continue;
+          }
+        }
+        if (lower[0] === 'i' && command.length > 1) {
           const program = INSTRUMENT_MAP[command.slice(1).toUpperCase()];
           if (program != null) {
             pushVarLen(track, 0);
@@ -1965,7 +1999,7 @@
       const lower = char.toLowerCase();
       if (lower === 'i') {
         const match = value.slice(i).match(/^i([A-Z0-9]+)/i);
-        if (match && INSTRUMENT_MAP[match[1].toUpperCase()] != null) {
+        if (match && (INSTRUMENT_MAP[match[1].toUpperCase()] != null || DRUM_MAP[match[1].toUpperCase()] != null)) {
           out += match[0];
           i += match[0].length - 1;
           continue;
@@ -2036,6 +2070,20 @@
     const parts = text.trim().split(/\s+/);
     const out = Object.create(null);
     for (let i = 0; i < parts.length; i += 2) out[parts[i]] = Number(parts[i + 1]);
+    return out;
+  }
+
+  function drumMap(text) {
+    const out = Object.create(null);
+    const lines = text.trim().split(/\n/);
+    for (const line of lines) {
+      const match = line.match(/^(\S+)\s+(\d+)\s+(\S+)$/);
+      if (match) {
+        const note = Number(match[2]);
+        out[match[1].toUpperCase()] = note;
+        out[match[3].toUpperCase()] = note;
+      }
+    }
     return out;
   }
 
