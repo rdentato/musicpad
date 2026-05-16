@@ -17,7 +17,9 @@ This repository contains a JavaScript port of Musicpad. It runs locally in the b
 
 ## Using it
 
-Open `src/musicpad.html` in a browser, write or load Musicpad text, then generate a MIDI file.
+The live version is available at <https://rdentato.github.io/musicpad>.
+
+You can also open `src/musicpad.html` locally in a browser, write or load Musicpad text, then generate a MIDI file.
 
 Example:
 
