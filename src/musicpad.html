@@ -350,9 +350,9 @@ C/4 E G/2 P/4 F/8 Eb C# / C</pre>
 
         <section>
           <h2>8. Drums</h2>
-          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note. You can also use the compact full drum names from the drum list, such as <code>iBassDrum1</code>, <code>iSnareDrum1</code>, and <code>iPedalHiHat</code>.</p>
-      <pre>iBassDrum1 o/16 xx-xxx--
-| iSnareDrum1 o/16 --x---xx
+          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note. You can also use the compact full drum names from the drum list, such as <code>iBassDrum</code>, <code>iSnareDrum</code>, and <code>iPedalHiHat</code>.</p>
+      <pre>iBassDrum o/16 xx-xxx--
+| iSnareDrum o/16 --x---xx
 | iPedalHiHat o/16 -x-x-x-x</pre>
           <p>Each drum voice is easiest to read and control on its own track.</p>
         </section>
@@ -561,7 +561,7 @@ $riff $riff*3</pre>
             <tr><td><code>chN</code></td><td>Set MIDI channel N, 1-based.</td></tr>
             <tr><td><code>iN</code></td><td>Set General MIDI program N. The normal list is 1..128; <code>i0</code> is also accepted as an alias for program 1.</td></tr>
             <tr><td><code>iInstrumentName</code></td><td>Set a General MIDI program by compact name, for example <code>iAcousticGrandPiano</code> or <code>iNylonGuitar</code>. Names are case-insensitive and must be written without spaces.</td></tr>
-            <tr><td><code>iBD</code>, <code>iBassDrum1</code>, ...</td><td>Select a drum by short code or compact full name, set channel 10, and set the default drum note. Drum names are case-insensitive and must be written without spaces.</td></tr>
+            <tr><td><code>iBD</code>, <code>iBassDrum</code>, ...</td><td>Select a drum by short code or compact full name, set channel 10, and set the default drum note. Drum names are case-insensitive and must be written without spaces.</td></tr>
             <tr><td><code>vN</code></td><td>Set velocity, max 127.</td></tr>
             <tr><td><code>uN</code></td><td>Duty: note-on portion of the slot in percent.</td></tr>
             <tr><td><code>t+N</code>, <code>t-N</code>, <code>t0</code></td><td>Transpose following notes.</td></tr>
@@ -598,19 +598,19 @@ $riff $riff*3</pre>
 
         <section id="drums">
           <h2>Drum shortcuts and accepted names</h2>
-          <p>Use either form after <code>i</code>: the short code or the compact drum name. For example, <code>iBD</code> and <code>iBassDrum1</code> are equivalent.</p>
+          <p>Use either form after <code>i</code>: the short code or the compact drum name. For example, <code>iBD</code> and <code>iBassDrum</code> are equivalent. For accepted names below MIDI note 80, a trailing <code>1</code> is omitted.</p>
           <table>
             <tr><th>Code</th><th>MIDI note</th><th>Accepted name</th><th>Code</th><th>MIDI note</th><th>Accepted name</th></tr>
-            <tr><td>BD</td><td>36</td><td>BassDrum1</td><td>B2</td><td>35</td><td>BassDrum2</td></tr>
-            <tr><td>SD</td><td>38</td><td>SnareDrum1</td><td>S2</td><td>40</td><td>SnareDrum2</td></tr>
+            <tr><td>BD</td><td>36</td><td>BassDrum</td><td>B2</td><td>35</td><td>BassDrum2</td></tr>
+            <tr><td>SD</td><td>38</td><td>SnareDrum</td><td>S2</td><td>40</td><td>SnareDrum2</td></tr>
             <tr><td>RS</td><td>37</td><td>SideStick</td><td>HC</td><td>39</td><td>HandClap</td></tr>
             <tr><td>HH</td><td>44</td><td>PedalHiHat</td><td>CH</td><td>42</td><td>ClosedHiHat</td></tr>
             <tr><td>OH</td><td>46</td><td>OpenHiHat</td><td>TA</td><td>54</td><td>Tambourine</td></tr>
-            <tr><td>T1</td><td>50</td><td>HighTom1</td><td>T2</td><td>48</td><td>HighTom2</td></tr>
-            <tr><td>T3</td><td>47</td><td>MidTom1</td><td>T4</td><td>45</td><td>MidTom2</td></tr>
-            <tr><td>T5</td><td>43</td><td>LowTom1</td><td>T6</td><td>41</td><td>LowTom2</td></tr>
-            <tr><td>CC</td><td>49</td><td>CrashCymbal1</td><td>C2</td><td>57</td><td>CrashCymbal2</td></tr>
-            <tr><td>TC</td><td>52</td><td>ChineseCymbal</td><td>RC</td><td>51</td><td>RideCymbal1</td></tr>
+            <tr><td>T1</td><td>50</td><td>HighTom</td><td>T2</td><td>48</td><td>HighTom2</td></tr>
+            <tr><td>T3</td><td>47</td><td>MidTom</td><td>T4</td><td>45</td><td>MidTom2</td></tr>
+            <tr><td>T5</td><td>43</td><td>LowTom</td><td>T6</td><td>41</td><td>LowTom2</td></tr>
+            <tr><td>CC</td><td>49</td><td>CrashCymbal</td><td>C2</td><td>57</td><td>CrashCymbal2</td></tr>
+            <tr><td>TC</td><td>52</td><td>ChineseCymbal</td><td>RC</td><td>51</td><td>RideCymbal</td></tr>
             <tr><td>R2</td><td>59</td><td>RideCymbal2</td><td>RB</td><td>53</td><td>RideBell</td></tr>
             <tr><td>SC</td><td>55</td><td>SplashCymbal</td><td>CB</td><td>56</td><td>Cowbell</td></tr>
           </table>
@@ -618,14 +618,14 @@ $riff $riff*3</pre>
 
         <section id="gm">
           <h2>General MIDI instruments and accepted names</h2>
-          <p>Use the number with <code>iN</code>, or the compact name with <code>iName</code>. Names are case-insensitive and must be written exactly as one word, without spaces. Example: <code>i0</code>, <code>i1</code>, and <code>iAcousticGrandPiano</code> select the same instrument.</p>
-          <pre>1 AcousticGrandPiano       17 DrawbarOrgan            33 AcousticBass           49 StringEnsemble1
+          <p>Use the number with <code>iN</code>, or the compact name with <code>iName</code>. Names are case-insensitive and must be written exactly as one word, without spaces. Example: <code>i0</code>, <code>i1</code>, and <code>iAcousticGrandPiano</code> select the same instrument. For instruments below number 80, a trailing <code>1</code> is omitted.</p>
+          <pre>1 AcousticGrandPiano       17 DrawbarOrgan            33 AcousticBass           49 StringEnsemble
 2 BrightAcousticPiano      18 PercussiveOrgan         34 ElectricBassFinger     50 StringEnsemble2
-3 ElectricGrandPiano       19 RockOrgan               35 ElectricBassPick       51 SynthStrings1
+3 ElectricGrandPiano       19 RockOrgan               35 ElectricBassPick       51 SynthStrings
 4 HonkyTonkPiano           20 ChurchOrgan             36 FretlessBass           52 SynthStrings2
-5 ElectricPiano1           21 ReedOrgan               37 SlapBass1              53 ChoirAahs
+5 ElectricPiano            21 ReedOrgan               37 SlapBass               53 ChoirAahs
 6 ElectricPiano2           22 Accordion               38 SlapBass2              54 VoiceOohs
-7 Harpsichord              23 Harmonica               39 SynthBass1             55 SynthVoice
+7 Harpsichord              23 Harmonica               39 SynthBass              55 SynthVoice
 8 Clavinet                 24 TangoAccordion          40 SynthBass2             56 OrchestraHit
 9 Celesta                  25 NylonGuitar             41 Violin                 57 Trumpet
 10 Glockenspiel            26 SteelGuitar             42 Viola                  58 Trombone
@@ -633,7 +633,7 @@ $riff $riff*3</pre>
 12 Vibraphone              28 CleanGuitar             44 Contrabass             60 MutedTrumpet
 13 Marimba                 29 MutedGuitar             45 TremoloStrings         61 FrenchHorn
 14 Xylophone               30 OverdrivenGuitar        46 PizzicatoStrings       62 BrassSection
-15 TubularBells            31 DistortionGuitar        47 OrchestralHarp         63 SynthBrass1
+15 TubularBells            31 DistortionGuitar        47 OrchestralHarp         63 SynthBrass
 16 Dulcimer                32 GuitarHarmonics         48 Timpani                64 SynthBrass2
 
 65 SopranoSax              81 Lead1                   97 FX1                    113 TinkleBell
@@ -2788,8 +2788,10 @@ CB 56 Cowbell
       const match = line.match(/^(\S+)\s+(\d+)\s+(\S+)$/);
       if (match) {
         const note = Number(match[2]);
+        const name = match[3].toUpperCase();
         out[match[1].toUpperCase()] = note;
-        out[match[3].toUpperCase()] = note;
+        out[name] = note;
+        if (note < 80 && name.endsWith('1')) out[name.slice(0, -1)] = note;
       }
     }
     return out;
@@ -2800,7 +2802,12 @@ CB 56 Cowbell
     const lines = text.trim().split(/\n/);
     for (const line of lines) {
       const match = line.match(/^(\d+)\s+(\S+)$/);
-      if (match) out[match[2].toUpperCase()] = Number(match[1]) - 1;
+      if (match) {
+        const number = Number(match[1]);
+        const name = match[2].toUpperCase();
+        out[name] = number - 1;
+        if (number < 80 && name.endsWith('1')) out[name.slice(0, -1)] = number - 1;
+      }
     }
     return out;
   }

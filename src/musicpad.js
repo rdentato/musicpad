@@ -2080,8 +2080,10 @@ CB 56 Cowbell
       const match = line.match(/^(\S+)\s+(\d+)\s+(\S+)$/);
       if (match) {
         const note = Number(match[2]);
+        const name = match[3].toUpperCase();
         out[match[1].toUpperCase()] = note;
-        out[match[3].toUpperCase()] = note;
+        out[name] = note;
+        if (note < 80 && name.endsWith('1')) out[name.slice(0, -1)] = note;
       }
     }
     return out;
@@ -2092,7 +2094,12 @@ CB 56 Cowbell
     const lines = text.trim().split(/\n/);
     for (const line of lines) {
       const match = line.match(/^(\d+)\s+(\S+)$/);
-      if (match) out[match[2].toUpperCase()] = Number(match[1]) - 1;
+      if (match) {
+        const number = Number(match[1]);
+        const name = match[2].toUpperCase();
+        out[name] = number - 1;
+        if (number < 80 && name.endsWith('1')) out[name.slice(0, -1)] = number - 1;
+      }
     }
     return out;
   }
