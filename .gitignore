@@ -1,2 +1,5 @@
 # Generated MIDI files
 *.mid
+
+# Built single-file app
+src/musicpad.html
