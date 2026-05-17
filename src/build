@@ -4,12 +4,13 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 template="musicpad-html.html"
+docs="musicpad-docs.html"
 engine="musicpad.js"
 songlist="songlist.js"
 soundfont="A320U.sf2"
 output="musicpad.html"
 
-for file in "$template" "$engine" "$songlist" "$soundfont"; do
+for file in "$template" "$docs" "$engine" "$songlist" "$soundfont"; do
   if [[ ! -f "$file" ]]; then
     printf 'missing required file: %s\n' "$file" >&2
     exit 1
@@ -19,12 +20,17 @@ done
 tmp="$(mktemp "${output}.tmp.XXXXXX")"
 trap 'rm -f "$tmp"' EXIT
 
+found_docs=0
 found_engine=0
 found_songlist=0
 found_soundfont=0
 
 while IFS= read -r line || [[ -n "$line" ]]; do
   case "$line" in
+    '    <!-- MUSICPAD_DOCS -->')
+      cat "$docs"
+      found_docs=1
+      ;;
     '  <!-- MUSICPAD_JS -->')
       printf '  <script>\n'
       cat "$engine"
@@ -50,6 +56,7 @@ while IFS= read -r line || [[ -n "$line" ]]; do
 done < "$template" > "$tmp"
 
 missing=()
+[[ "$found_docs" -eq 1 ]] || missing+=(MUSICPAD_DOCS)
 [[ "$found_engine" -eq 1 ]] || missing+=(MUSICPAD_JS)
 [[ "$found_songlist" -eq 1 ]] || missing+=(SONGLIST_JS)
 [[ "$found_soundfont" -eq 1 ]] || missing+=(SOUNDFONT_A320U)

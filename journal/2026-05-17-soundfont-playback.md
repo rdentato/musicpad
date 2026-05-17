@@ -34,3 +34,6 @@
 - Checkpoint: pending title change remains in `src/musicpad-html.html`; generated ignored `src/musicpad.html` was rebuilt. `docs/index.html` was restored after the unrequested copy. User emphasized no inferred actions.
 - Current worktree at checkpoint: modified `AGENTS.md` (user-owned), `STATE.md`, `PLAN.md`, journal, and `src/musicpad-html.html`; untracked `old/` and `xxx/`.
 - Next step: ask whether to commit the title change and state/plan/journal updates; do not touch `AGENTS.md`, `old/`, `xxx/`, or `docs/index.html` without explicit approval.
+- Refactor: extracted Tutorial and Reference page markup from `src/musicpad-html.html` into `src/musicpad-docs.html`; `src/build` now inlines it at `MUSICPAD_DOCS`.
+- Verification: `bash -n src/build`, ran `src/build`, generated HTML contains tutorial/reference/song-list pages, inline JavaScript parses, and `node tests/musicpad.test.js` passes.
+- Planning: added M5 MusicXML Export to `PLAN.md`. The plan starts with a minimal interpreted event model, then a small MIDI-preserving refactor, then a MusicXML writer and Download menu item.

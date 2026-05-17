@@ -1,0 +1,387 @@
+    <section id="tutorialPage" class="page" aria-label="Tutorial">
+      <div class="doc-content">
+      <h2>Musicpad Tutorial</h2>
+      <p>Musicpad is a text notation for quickly sketching musical ideas and generating MIDI files. You do not need the whole language at once: start with notes, then add rhythm, tracks, drums, repeats, and macros.</p>
+
+        <section>
+          <h2>1. Start with notes</h2>
+          <p>Write note names separated by spaces. Notes are case-insensitive.</p>
+      <pre>C E G F Eb C# C</pre>
+          <p>Sharps can be written with <code>#</code> or <code>+</code>; flats with <code>b</code> or <code>-</code>.</p>
+        </section>
+
+        <section>
+          <h2>2. Add duration</h2>
+          <p>Add <code>/N</code> to make a note last <code>1/N</code>. The default is <code>1/4</code>.</p>
+      <pre>C/4 E/4 G/2 F/8 Eb/8 C#/8 C/8</pre>
+          <p>Musicpad remembers missing information. Once the duration is <code>/8</code>, following notes reuse it until changed:</p>
+      <pre>C/4 E G/2 F/8 Eb C# C</pre>
+        </section>
+
+        <section>
+          <h2>3. Octaves</h2>
+          <p>Put an octave number after a note, or use standalone <code>/</code> and <code>\</code> to move up and down one octave.</p>
+      <pre>C/4 E G/2 F/8 Eb C# C5/8
+C/4 E G/2 F/8 Eb C# / C</pre>
+          <p>The default octave is 4.</p>
+        </section>
+
+        <section>
+          <h2>4. Repeat notes, hold notes, and pause</h2>
+          <div class="lesson">
+            <p><code>x</code> repeats the previous note or chord.</p>
+      <pre>C/8 x x x</pre>
+          </div>
+          <div class="lesson">
+            <p><code>=</code> holds the previous note for one more duration unit. It can be attached directly.</p>
+      <pre>C/8 E= G=== F Eb C# C</pre>
+          </div>
+          <div class="lesson">
+            <p><code>P</code> is an explicit pause. <code>-</code> is a pause with the previous duration.</p>
+      <pre>C/4 E G/2 P/4 F/8 Eb C# / C x x - x</pre>
+          </div>
+          <p class="tip">Pattern characters do not need spaces. <code>C/8 -x-xxx=x-x</code> is valid.</p>
+        </section>
+
+        <section>
+          <h2>5. Use <code>o</code> to set defaults without playing</h2>
+          <p><code>o</code> means “remember these note settings, but do not play now.” It is especially useful for rhythm patterns.</p>
+      <pre>o/16 x-x-xx--</pre>
+          <p>This sets the duration to sixteenth notes, then plays the pattern.</p>
+        </section>
+
+        <section>
+          <h2>6. Tempo</h2>
+          <p>Set the song tempo with <code>tempoN</code>. The number is quarter notes per minute.</p>
+      <pre>tempo100
+C/4 E G/2 P/4 F/8 Eb C# / C</pre>
+        </section>
+
+        <section>
+          <h2>7. Tracks and channels</h2>
+          <p>Use <code>|</code> to start another independent track. Use <code>chN</code> to give each track a MIDI channel.</p>
+      <pre>ch1 C E G | ch2 E G B</pre>
+          <p>Change instruments with <code>iN</code>, using General MIDI program numbers, or with <code>iInstrumentName</code>, using the compact names in the instrument list. For example, <code>i0</code>, <code>i1</code>, and <code>iAcousticGrandPiano</code> all select Acoustic Grand Piano.</p>
+      <pre>ch1 iDrawbarOrgan C E G | ch2 iNylonGuitar E G B</pre>
+          <p>You can jump back to a specific track with <code>|0</code>, <code>|1</code>, etc. This is useful when writing a song section by section.</p>
+      <pre>ch1 i17 C E G | ch2 i25 E G B |0 F E C | A G E</pre>
+          <p class="tip">Tracks are independent. If two tracks should stay aligned, you must give them matching total durations.</p>
+        </section>
+
+        <section>
+          <h2>8. Drums</h2>
+          <p>Drum shortcuts such as <code>iBD</code>, <code>iSD</code>, and <code>iHH</code> select a drum sound, switch to MIDI channel 10, and set the default note. You can also use the compact full drum names from the drum list, such as <code>iBassDrum</code>, <code>iSnareDrum</code>, and <code>iPedalHiHat</code>.</p>
+      <pre>iBassDrum o/16 xx-xxx--
+| iSnareDrum o/16 --x---xx
+| iPedalHiHat o/16 -x-x-x-x</pre>
+          <p>Each drum voice is easiest to read and control on its own track.</p>
+        </section>
+
+        <section>
+          <h2>9. Repeats</h2>
+          <p><code>*N</code> repeats the previous token. Parentheses repeat a group.</p>
+      <pre>iBD 8*8
+
+iBD (8 4)*4</pre>
+          <p>Because rhythm strings like <code>xx-xxx--</code> are single compact tokens before parsing, this is valid:</p>
+      <pre>iBD o/16 xx-xxx--*4
+| iSD o/16 --x---xx*4
+| iHH o/16 -x-x-x-x*4</pre>
+        </section>
+
+        <section>
+          <h2>10. Macros</h2>
+          <p>Define reusable parts with <code>m$name(...)</code>, then call them with <code>$name</code>. Macro names are case-sensitive.</p>
+      <pre>m$riff(C/16 E G)
+$riff $riff*3</pre>
+          <p>Macros are most useful when they include track jumps.</p>
+      <pre>m$drums(
+|0 iBD o/16 xx-xxx--
+|  iSD o/16 --x---xx
+|  iHH o/16 -x-x-x-x
+)
+
+$drums*4</pre>
+        </section>
+
+        <section>
+          <h2>11. A typical song layout</h2>
+          <p>One practical structure is: title/comment, global settings, track setup, macros, then song structure.</p>
+      <pre># My cool song
+
+tempo70
+
+# Instruments
+|0 iHH o/16 | iSD o/16 | iBD o/16
+|5 ch1 i01 o4/16 | ch2 i34 o2/16
+
+# Macros
+m$rhythm(
+|0 xxxxxxxxxxxxxxxx
+|  --x---x---x---x-
+|  x---x---x---x---
+)
+
+m$bass1( |6 E*16 )
+m$bass2( |6 A*16 )
+
+m$piano1( |5 (P G# G# G# A G# F# G#)*2 )
+m$piano2( |5 (P G# G# G# A B / C# E \)*2 )
+
+# Song structure
+$rhythm*4 ($bass1 $bass2 $piano1 $piano2)*2</pre>
+        </section>
+
+        <section>
+          <h2>12. Chords and strumming</h2>
+          <p>For simple block chords, use brackets.</p>
+      <pre>oC4 [0,4,7]
+[Amin]
+[g:-,0,2,2,2,0]
+[g:Amaj]</pre>
+          <p>Use <code>strum</code> to make chords less mechanical.</p>
+      <pre>i25 o/16 strum10,300,80 [g:Amin]*16</pre>
+        </section>
+
+        <section>
+          <h2>13. Guitar mode</h2>
+          <p>In guitar mode, bare numbers mean temporary semitone offsets from the default note. This makes tab-like writing possible.</p>
+      <pre>tempo100
+|0 ch1 i25 guiton | ch1 guiton | ch1 guiton
+(
+|0 oE5/16 ------5=7=====7=8=====8=2=====2=0=========0=====
+|  oB4/16 ----5==---5====---5====---3====---1===1=====1===0=
+|  oG4/16 --5====-----5==-----5==-----2==-----2=========2=0=
+)*2</pre>
+          <p><code>globalguiton</code> turns guitar mode on by default for all tracks. Use <code>guitoff</code> to disable it on a track.</p>
+        </section>
+
+        <section>
+          <h2>14. Tom mode</h2>
+          <p>In tom mode, bare numbers choose toms: 1 is highest, 6 is lowest.</p>
+      <pre>tomson o/16 4 3 5 1 1 5 6 6 4 5 4 2 1 1 1 6</pre>
+        </section>
+
+        <section>
+          <h2>15. More expressive commands</h2>
+          <ul>
+            <li><code>t+N</code>, <code>t-N</code>, <code>t0</code>: transpose following notes.</li>
+            <li><code>N60</code>, <code>N+1</code>, <code>N-1</code>: absolute or relative MIDI note numbers.</li>
+            <li><code>NT+1</code>, <code>NT-1</code>: temporary relative notes.</li>
+            <li><code>Ra/b</code>, <code>R1</code>: duration ratios for triplets and polyrhythms.</li>
+            <li><code>vN</code>, <code>velocityN</code>: velocity.</li>
+            <li><code>'x</code>, <code>,x</code>, <code>stressN</code>, <code>softN</code>: accents.</li>
+            <li><code>looseW,Q</code>, <code>velvarW,Q</code>: humanize timing and velocity.</li>
+            <li><code>pitch+N</code>, <code>pitch-N</code>, <code>pitch0</code>: pitch bends.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2>Next steps</h2>
+          <p>Open the editor page, modify the example, then use <strong>Download → MIDI (.mid)</strong> to download a MIDI file. Keep the reference page nearby for exact command syntax.</p>
+        </section>
+    </div>
+    </section>
+
+    <section id="referencePage" class="page" aria-label="Reference">
+      <div class="doc-content">
+      <h2>Musicpad Language Reference</h2>
+      <p>This page is a practical reference for the Musicpad notation accepted by the JavaScript MIDI generator. Commands are case-insensitive unless stated otherwise. Whitespace separates commands; do not put whitespace inside one command such as <code>tempo120</code> or <code>C#5/8</code>.</p>
+
+        <section id="basics">
+          <h2>Basic lexical rules</h2>
+          <ul>
+            <li>Notes and commands are generally case-insensitive: <code>c</code>, <code>C</code>, <code>Tempo120</code> work the same.</li>
+            <li>Exceptions: <code>dEbUg</code>, <code>dEbUgMaX</code>, and macro names are case-sensitive.</li>
+            <li>A comment starts with <code>#</code> when it follows whitespace and continues to the end of the line.</li>
+            <li>Whitespace is optional around pattern characters <code>x</code>, <code>-</code>, <code>=</code>, and parentheses used for repeats.</li>
+            <li><code>#</code> after a note is sharp: <code>C#</code> is not a comment.</li>
+          </ul>
+        </section>
+
+        <section id="notes">
+          <h2>Notes, pitch, octave, and duration</h2>
+          <table>
+            <tr><th>Form</th><th>Meaning</th><th>Examples</th></tr>
+            <tr><td><code>A</code> to <code>G</code></td><td>Play a note. Missing octave/duration reuse previous values.</td><td><code>C E G</code></td></tr>
+            <tr><td><code>+</code> or <code>#</code></td><td>Sharp.</td><td><code>A+</code>, <code>A#</code></td></tr>
+            <tr><td><code>-</code> or <code>b</code></td><td>Flat when attached to a note.</td><td><code>A-</code>, <code>Ab</code></td></tr>
+            <tr><td><code>C5</code></td><td>Note with octave.</td><td><code>C5/8</code></td></tr>
+            <tr><td><code>/N</code></td><td>Duration <code>1/N</code>.</td><td><code>A/8</code>, <code>C#5/16</code></td></tr>
+            <tr><td><code>/</code>, <code>\</code></td><td>Raise/lower current octave by one.</td><td><code>/ C \ C</code></td></tr>
+            <tr><td><code>O</code></td><td>Set note/octave/duration defaults without playing.</td><td><code>o/16</code>, <code>oA5/8</code></td></tr>
+            <tr><td><code>X</code></td><td>Repeat previous note/chord.</td><td><code>C x x</code></td></tr>
+            <tr><td><code>P</code></td><td>Pause. Can take duration.</td><td><code>P</code>, <code>P/8</code></td></tr>
+            <tr><td><code>-</code></td><td>Pause of previous duration when standalone.</td><td><code>x-x--</code></td></tr>
+            <tr><td><code>=</code></td><td>Hold the previous event for one more duration unit.</td><td><code>x==</code> is three units long</td></tr>
+            <tr><td><code>N60</code></td><td>Absolute MIDI note number.</td><td><code>N60/4</code></td></tr>
+            <tr><td><code>N+2</code>, <code>N-1</code></td><td>Move the reference note up/down, then play it.</td><td><code>N60 N+2 N-1</code></td></tr>
+            <tr><td><code>NT+2</code>, <code>NT-1</code></td><td>Temporary relative note; does not change the reference note.</td><td><code>x nt+2 x</code></td></tr>
+            <tr><td><code>'</code>, <code>,</code></td><td>Stress or soften the next note, no space.</td><td><code>'x</code>, <code>,A</code></td></tr>
+          </table>
+
+          <p class="note">Ambiguity: <code>F---</code> means <code>F-</code> plus two pauses. Write <code>F ---</code> for F natural plus three pauses.</p>
+        </section>
+
+        <section id="rhythm">
+          <h2>Rhythm, repeats, and ratios</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>*N</code></td><td>Repeat the previous token or parenthesized group N times.</td></tr>
+            <tr><td><code>( ... )*N</code></td><td>Repeat several commands.</td></tr>
+            <tr><td><code>Ra/b</code></td><td>Multiply following durations by <code>a/b</code>. Useful for triplets and polyrhythms.</td></tr>
+            <tr><td><code>R1</code></td><td>Return to normal duration.</td></tr>
+          </table>
+      <pre>iBD o/16 xx-xxx--*4
+| iSD o/16 --x---xx*4
+| iHH o/16 -x-x-x-x*4</pre>
+        </section>
+
+        <section id="tracks">
+          <h2>Tracks</h2>
+          <p>Tracks are independent timelines. Use them for polyphony, instruments, and drums.</p>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>|</code></td><td>Continue on the next track.</td></tr>
+            <tr><td><code>|0</code></td><td>Jump to track 0.</td></tr>
+            <tr><td><code>|N</code></td><td>Jump to track N. No space between <code>|</code> and the number.</td></tr>
+          </table>
+      <pre>ch1 i17 C E G | ch2 i25 E G B</pre>
+        </section>
+
+        <section id="macros">
+          <h2>Macros</h2>
+          <table>
+            <tr><th>Form</th><th>Meaning</th></tr>
+            <tr><td><code>m$name( ... )</code></td><td>Define a macro. The <code>m$</code> prefix must be lowercase.</td></tr>
+            <tr><td><code>$name</code></td><td>Expand/play a macro.</td></tr>
+            <tr><td><code>mrnd$name( $a $b $c )</code></td><td>Define a random macro; each expansion chooses one listed item.</td></tr>
+          </table>
+      <pre>m$riff(C/16 E G)
+$riff $riff*3</pre>
+        </section>
+
+        <section id="chords">
+          <h2>Chords</h2>
+          <p>Chord commands use brackets with no whitespace inside.</p>
+          <table>
+            <tr><th>Form</th><th>Meaning</th><th>Example</th></tr>
+            <tr><td><code>[0,4,7]</code></td><td>Offsets in semitones from the current note.</td><td><code>oC4 [0,4,7]</code></td></tr>
+            <tr><td><code>[g:-,0,2,2,2,0]</code></td><td>Guitar frets relative to tuning; <code>-</code> means muted string.</td><td>A major shape</td></tr>
+            <tr><td><code>[Amin]</code>, <code>[min]</code></td><td>Named keyboard chord. If no root is given, use current note.</td><td><code>[Amin:1]</code></td></tr>
+            <tr><td><code>[g:Amaj]</code></td><td>Named guitar chord. Guitar roots use A-G and <code>b</code> flats.</td><td><code>[g:Amaj:3]</code></td></tr>
+          </table>
+          <p><code>strumA[,B[,C]]</code> delays chord notes by A milliseconds. B is the time window for an upstroke; C is upstroke velocity percent. Try <code>strum10,300,80</code> for rhythm guitar. <code>tuning[E3,A3,D4,G4,B4,E5]</code> changes the six guitar strings used by guitar chords.</p>
+        </section>
+
+        <section id="midi">
+          <h2>Instruments, drums, channels, and tone</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>chN</code></td><td>Set MIDI channel N, 1-based.</td></tr>
+            <tr><td><code>iN</code></td><td>Set General MIDI program N. The normal list is 1..128; <code>i0</code> is also accepted as an alias for program 1.</td></tr>
+            <tr><td><code>iInstrumentName</code></td><td>Set a General MIDI program by compact name, for example <code>iAcousticGrandPiano</code> or <code>iNylonGuitar</code>. Names are case-insensitive and must be written without spaces.</td></tr>
+            <tr><td><code>iBD</code>, <code>iBassDrum</code>, ...</td><td>Select a drum by short code or compact full name, set channel 10, and set the default drum note. Drum names are case-insensitive and must be written without spaces.</td></tr>
+            <tr><td><code>vN</code></td><td>Set velocity, max 127.</td></tr>
+            <tr><td><code>uN</code></td><td>Duty: note-on portion of the slot in percent.</td></tr>
+            <tr><td><code>t+N</code>, <code>t-N</code>, <code>t0</code></td><td>Transpose following notes.</td></tr>
+            <tr><td><code>pitch+N</code>, <code>pitch-N</code>, <code>pitch0</code></td><td>Pitch bend in percent; 100% is usually about two semitones.</td></tr>
+            <tr><td><code>ctrlA,B</code></td><td>Emit MIDI controller A with value B.</td></tr>
+            <tr><td><code>sysexA,B,C</code></td><td>Emit MIDI SysEx bytes.</td></tr>
+          </table>
+        </section>
+
+        <section id="modes">
+          <h2>Modes</h2>
+          <table>
+            <tr><th>Mode</th><th>Commands</th><th>Bare number meaning</th></tr>
+            <tr><td>Normal</td><td>default</td><td>Play the previous note/chord with duration <code>1/N</code>.</td></tr>
+            <tr><td>Guitar</td><td><code>guiton</code>, <code>guitoff</code>, <code>globalguiton</code></td><td>Temporary semitone offset, useful for tab-like string tracks.</td></tr>
+            <tr><td>Tom</td><td><code>tomson</code>, <code>tomsoff</code></td><td>Tom number 1 high through 6 low, on channel 10.</td></tr>
+          </table>
+        </section>
+
+        <section id="globals">
+          <h2>Global commands</h2>
+          <table>
+            <tr><th>Command</th><th>Meaning</th></tr>
+            <tr><td><code>tempoN</code></td><td>Quarter notes per minute. Default 60.</td></tr>
+            <tr><td><code>resolutionN</code></td><td>0=96, 1=192, 2=384, 3=1536 PPQN. Default 192.</td></tr>
+            <tr><td><code>dutyN</code></td><td>Default duty percent.</td></tr>
+            <tr><td><code>velocityN</code></td><td>Default velocity.</td></tr>
+            <tr><td><code>stressN</code>, <code>softN</code></td><td>Track settings for stressed/soft notes.</td></tr>
+            <tr><td><code>looseW,Q</code>, <code>globalooseW,Q</code></td><td>Timing humanization: ±W ms. Q is centering power or <code>g</code> Gaussian.</td></tr>
+            <tr><td><code>velvarW,Q</code>, <code>globalvelvarW,Q</code></td><td>Velocity humanization: ±W percent.</td></tr>
+            <tr><td><code>dEbUg</code>, <code>dEbUgMaX</code></td><td>Original debug commands; case-sensitive.</td></tr>
+          </table>
+        </section>
+
+        <section id="drums">
+          <h2>Drum shortcuts and accepted names</h2>
+          <p>Use either form after <code>i</code>: the short code or the compact drum name. For example, <code>iBD</code> and <code>iBassDrum</code> are equivalent. For accepted names below MIDI note 80, a trailing <code>1</code> is omitted.</p>
+          <table>
+            <tr><th>Code</th><th>MIDI note</th><th>Accepted name</th><th>Code</th><th>MIDI note</th><th>Accepted name</th></tr>
+            <tr><td>BD</td><td>36</td><td>BassDrum</td><td>B2</td><td>35</td><td>BassDrum2</td></tr>
+            <tr><td>SD</td><td>38</td><td>SnareDrum</td><td>S2</td><td>40</td><td>SnareDrum2</td></tr>
+            <tr><td>RS</td><td>37</td><td>SideStick</td><td>HC</td><td>39</td><td>HandClap</td></tr>
+            <tr><td>HH</td><td>44</td><td>PedalHiHat</td><td>CH</td><td>42</td><td>ClosedHiHat</td></tr>
+            <tr><td>OH</td><td>46</td><td>OpenHiHat</td><td>TA</td><td>54</td><td>Tambourine</td></tr>
+            <tr><td>T1</td><td>50</td><td>HighTom</td><td>T2</td><td>48</td><td>HighTom2</td></tr>
+            <tr><td>T3</td><td>47</td><td>MidTom</td><td>T4</td><td>45</td><td>MidTom2</td></tr>
+            <tr><td>T5</td><td>43</td><td>LowTom</td><td>T6</td><td>41</td><td>LowTom2</td></tr>
+            <tr><td>CC</td><td>49</td><td>CrashCymbal</td><td>C2</td><td>57</td><td>CrashCymbal2</td></tr>
+            <tr><td>TC</td><td>52</td><td>ChineseCymbal</td><td>RC</td><td>51</td><td>RideCymbal</td></tr>
+            <tr><td>R2</td><td>59</td><td>RideCymbal2</td><td>RB</td><td>53</td><td>RideBell</td></tr>
+            <tr><td>SC</td><td>55</td><td>SplashCymbal</td><td>CB</td><td>56</td><td>Cowbell</td></tr>
+          </table>
+        </section>
+
+        <section id="gm">
+          <h2>General MIDI instruments and accepted names</h2>
+          <p>Use the number with <code>iN</code>, or the compact name with <code>iName</code>. Names are case-insensitive and must be written exactly as one word, without spaces. Example: <code>i0</code>, <code>i1</code>, and <code>iAcousticGrandPiano</code> select the same instrument. For instruments below number 80, a trailing <code>1</code> is omitted.</p>
+          <pre>1 AcousticGrandPiano       17 DrawbarOrgan            33 AcousticBass           49 StringEnsemble
+2 BrightAcousticPiano      18 PercussiveOrgan         34 ElectricBassFinger     50 StringEnsemble2
+3 ElectricGrandPiano       19 RockOrgan               35 ElectricBassPick       51 SynthStrings
+4 HonkyTonkPiano           20 ChurchOrgan             36 FretlessBass           52 SynthStrings2
+5 ElectricPiano            21 ReedOrgan               37 SlapBass               53 ChoirAahs
+6 ElectricPiano2           22 Accordion               38 SlapBass2              54 VoiceOohs
+7 Harpsichord              23 Harmonica               39 SynthBass              55 SynthVoice
+8 Clavinet                 24 TangoAccordion          40 SynthBass2             56 OrchestraHit
+9 Celesta                  25 NylonGuitar             41 Violin                 57 Trumpet
+10 Glockenspiel            26 SteelGuitar             42 Viola                  58 Trombone
+11 MusicBox                27 JazzGuitar              43 Cello                  59 Tuba
+12 Vibraphone              28 CleanGuitar             44 Contrabass             60 MutedTrumpet
+13 Marimba                 29 MutedGuitar             45 TremoloStrings         61 FrenchHorn
+14 Xylophone               30 OverdrivenGuitar        46 PizzicatoStrings       62 BrassSection
+15 TubularBells            31 DistortionGuitar        47 OrchestralHarp         63 SynthBrass
+16 Dulcimer                32 GuitarHarmonics         48 Timpani                64 SynthBrass2
+
+65 SopranoSax              81 Lead1                   97 FX1                    113 TinkleBell
+66 AltoSax                 82 Lead2                   98 FX2                    114 Agogo
+67 TenorSax                83 Lead3                   99 FX3                    115 SteelDrums
+68 BaritoneSax             84 Lead4                   100 FX4                   116 Woodblock
+69 Oboe                    85 Lead5                   101 FX5                   117 TaikoDrum
+70 EnglishHorn             86 Lead6                   102 FX6                   118 MelodicTom
+71 Bassoon                 87 Lead7                   103 FX7                   119 SynthDrum
+72 Clarinet                88 Lead8                   104 FX8                   120 ReverseCymbal
+73 Piccolo                 89 Pad1                    105 Sitar                 121 GuitarFretNoise
+74 Flute                   90 Pad2                    106 Banjo                 122 BreathNoise
+75 Recorder                91 Pad3                    107 Shamisen              123 Seashore
+76 PanFlute                92 Pad4                    108 Koto                  124 BirdTweet
+77 BlownBottle             93 Pad5                    109 Kalimba               125 TelephoneRing
+78 Shakuhachi              94 Pad6                    110 Bagpipe               126 Helicopter
+79 Whistle                 95 Pad7                    111 Fiddle                127 Applause
+80 Ocarina                 96 Pad8                    112 Shanai                128 Gunshot
+
+81 LeadSquare              89 PadNewAge               97 FXRain
+82 LeadSawtooth            90 PadWarm                 98 FXSoundtrack
+83 LeadCalliope            91 PadPolysynth            99 FXCrystal
+84 LeadChiff               92 PadChoir                100 FXAtmosphere
+85 LeadCharang             93 PadBowed                101 FXBrightness
+86 LeadVoice               94 PadMetallic             102 FXGoblins
+87 LeadFifths              95 PadHalo                 103 FXEchoes
+88 LeadBass                96 PadSweep                104 FXSciFi</pre>
+        </section>
+    </div>
+    </section>
+

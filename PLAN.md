@@ -44,11 +44,22 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - [x] Extract bundled song lists into `src/songlist.js`
 - [x] Ignore generated `src/musicpad.html`
 
+### M5: MusicXML Export
+Goal: export the interpreted Musicpad piece as score-oriented MusicXML, using the same played events/timelines that MIDI playback uses.
+- [ ] Define a minimal intermediate event model for interpreted tracks: notes, rests/gaps, chords, timing, channel, instrument, velocity where useful.
+- [ ] Refactor MIDI generation in small steps so `musicpadToMidi(source)` remains unchanged but structured events can also be collected/reused.
+- [ ] Add tests proving the event model preserves current MIDI output for representative examples, including implicit track splitting (`A | B` = `|0 A | B`).
+- [ ] Implement first MusicXML writer: one Musicpad track per MusicXML part; default 4/4 measure grid; divisions derived from PPQN; notes, rests, chords, ties as needed.
+- [ ] Add `Download → MusicXML (.musicxml)` to the UI template and rebuild flow.
+- [ ] Verify with automated XML structure tests and at least one external score-rendering smoke test if available.
+
 ## Risks
 - **Variable-length MIDI encoding**: must match Perl `pack 'w'` exactly.
 - **Chord parsing edge cases**: the Perl regex logic is intricate; need careful testing.
 - **In-browser playback quality**: playback depends on the small Web Audio SoundFont synth and browser behavior.
 - **Generated artifact drift**: `src/musicpad.html` is ignored; run `src/build` after source changes before manual testing or distribution.
+- **MusicXML mismatch risk**: Musicpad is playback-oriented while MusicXML is score-oriented; use a shared interpreted event model to prevent MIDI and MusicXML divergence.
+- **Notation layout choices**: Musicpad has no required barlines/time signatures; first MusicXML export will need explicit defaults and may prioritize faithful timing over polished engraving.
 
 ## Decision Log
 - 2026-05-12: Port 1:1 from Perl, preserving all notation features
@@ -57,6 +68,7 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - 2026-05-13: Removed browser playback-verification requirement; external MIDI player is the intended listener.
 - 2026-05-17: Reintroduced optional browser playback using embedded `A320U.sf2`.
 - 2026-05-17: Treat `src/musicpad.html` as generated; build from `src/musicpad-html.html`, `src/musicpad.js`, `src/songlist.js`, and `src/A320U.sf2` with `src/build`.
+- 2026-05-17: Plan MusicXML around a reusable interpreted event model rather than a separate parser, so exports represent what Musicpad plays.
 
 ## Next Step
-Decide whether to commit the pending title change in `src/musicpad-html.html`. For future app changes, edit build inputs, run `src/build`, smoke-test generated `src/musicpad.html`, then commit inputs (not generated HTML). Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.
+Start M5 by designing the minimal interpreted event model and identifying the smallest engine refactor that exposes it without changing `musicpadToMidi(source)` output. Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.
