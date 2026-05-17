@@ -10,3 +10,5 @@
 - Verification: ran `src/build`; generated `src/musicpad.html` is ~13 MiB, embeds the engine and SoundFont, and inline JavaScript parses successfully.
 - Git staging: removed generated `src/musicpad.html` from the index while keeping it on disk; staged build inputs `src/musicpad-html.html`, `src/build`, `src/A320U.sf2`, and `src/A320U-license.txt`.
 - Update: added `src/musicpad.html` to `.gitignore` as a generated build output.
+- Update: extracted inline song lists into `src/songlist.js`; `src/build` now inlines `musicpad.js`, `songlist.js`, and `A320U.sf2` into generated `src/musicpad.html`.
+- Verification: ran `src/build`; generated HTML has three inline JS scripts, song lists initialize as 15 bundled + 14 project songs, MIDI parsing and SoundFont zone smoke tests pass.

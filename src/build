@@ -9,21 +9,26 @@ import base64
 
 html_template = Path('musicpad-html.html')
 engine_file = Path('musicpad.js')
+songlist_file = Path('songlist.js')
 soundfont_file = Path('A320U.sf2')
 output_file = Path('musicpad.html')
 
 template = html_template.read_text()
 engine = engine_file.read_text()
+songlist = songlist_file.read_text()
 soundfont = base64.encodebytes(soundfont_file.read_bytes()).decode('ascii')
 
 engine_block = f'  <script>\n{engine}\n  </script>'
+songlist_block = f'  <script>\n{songlist}\n  </script>'
 soundfont_block = f'  <script id="soundFontA320U" type="application/octet-stream">\n{soundfont}</script>'
 
-missing = [name for name in ('<!-- MUSICPAD_JS -->', '<!-- SOUNDFONT_A320U -->') if name not in template]
+placeholders = ('<!-- MUSICPAD_JS -->', '<!-- SONGLIST_JS -->', '<!-- SOUNDFONT_A320U -->')
+missing = [name for name in placeholders if name not in template]
 if missing:
     raise SystemExit(f'missing placeholder(s): {", ".join(missing)}')
 
 output = template.replace('  <!-- MUSICPAD_JS -->', engine_block, 1)
+output = output.replace('  <!-- SONGLIST_JS -->', songlist_block, 1)
 output = output.replace('  <!-- SOUNDFONT_A320U -->', soundfont_block, 1)
 output_file.write_text(output)
 print(f'wrote {output_file}')
