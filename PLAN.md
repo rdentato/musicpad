@@ -59,4 +59,4 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - 2026-05-17: Treat `src/musicpad.html` as generated; build from `src/musicpad-html.html`, `src/musicpad.js`, `src/songlist.js`, and `src/A320U.sf2` with `src/build`.
 
 ## Next Step
-No active task. For future app changes, edit build inputs, run `src/build`, smoke-test generated `src/musicpad.html`, then commit inputs (not generated HTML).
+Decide whether to commit the pending title change in `src/musicpad-html.html`. For future app changes, edit build inputs, run `src/build`, smoke-test generated `src/musicpad.html`, then commit inputs (not generated HTML). Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.

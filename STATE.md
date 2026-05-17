@@ -4,18 +4,18 @@
 main
 
 ## Active Task
-None — latest playback/build refactor is committed and pushed.
+Pending small UI title change: `src/musicpad-html.html` title changed from `Musicpad Playback` to `Musicpad`; generated `src/musicpad.html` was rebuilt but is ignored.
 
 ## Last Stop
-Added browser playback with embedded `A320U.sf2`, split the generated app into build inputs, extracted song lists, rebuilt `src/musicpad.html`, committed, and pushed.
+Checkpoint after title change and process correction. `docs/index.html` unintended refresh was reverted. Current worktree also has a user-owned `AGENTS.md` modification and untracked `old/`, `xxx/`.
 
 ## Open Questions
-1. What to do with untracked `old/` and `xxx/`? (`old/` should be ignored by convention.)
-2. Any further UI/playback polish?
+1. Should the title change be committed?
+2. What to do with untracked `old/` and `xxx/`? (`old/` should be ignored by convention.)
 3. Should generated `src/musicpad.html` be distributed outside git releases?
 
 ## Last Decision
-`src/musicpad.html` is generated and ignored; source of truth is `src/musicpad-html.html` + `src/musicpad.js` + `src/songlist.js` + `src/A320U.sf2`, built by `src/build`.
+Do not perform inferred actions. Only do explicitly requested file changes; generated/deployment copies such as `docs/index.html` require explicit instruction.
 
 ## Pointers
 - PLAN.md

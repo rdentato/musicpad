@@ -28,3 +28,9 @@
 - Tests: added regression assertion for implicit/explicit track-0 equivalence. Ran `src/build`, fragment MIDI smoke check, and generated HTML syntax check. Full `node tests/musicpad.test.js` still blocked by missing `docs/songs/Bird I.mpd` in this worktree.
 - Correction: project documentation/songs live under `project-docs/`, not `docs/`; updated tests and session/plan references accordingly.
 - Verification: `node tests/musicpad.test.js` now passes using `project-docs/songs`.
+- Update: changed browser title from `Musicpad Playback` to `Musicpad`; rebuilt `src/musicpad.html` and refreshed `docs/index.html`.
+- Verification: generated HTML title is `Musicpad`; inline JavaScript parses.
+- Correction: reverted unintended `docs/index.html` refresh. User explicitly warned not to perform unrequested actions.
+- Checkpoint: pending title change remains in `src/musicpad-html.html`; generated ignored `src/musicpad.html` was rebuilt. `docs/index.html` was restored after the unrequested copy. User emphasized no inferred actions.
+- Current worktree at checkpoint: modified `AGENTS.md` (user-owned), `STATE.md`, `PLAN.md`, journal, and `src/musicpad-html.html`; untracked `old/` and `xxx/`.
+- Next step: ask whether to commit the title change and state/plan/journal updates; do not touch `AGENTS.md`, `old/`, `xxx/`, or `docs/index.html` without explicit approval.

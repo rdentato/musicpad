@@ -41,6 +41,9 @@ Before performing a destructive action or a major refactor, always summarize
 the intended changes and await an explicit `yes`, `ok`, or `go`, or a clear
 equivalent. Silence is not consent.
 
+You must only perform actions explicitly requested by the user. No "inferred" or "assumed" actions. If you determine that an action is necessary always ask for confimation.
+/
+
 ## User-Owned Changes
 
 - Existing user-authored files and edits are user-owned. Do not modify,
