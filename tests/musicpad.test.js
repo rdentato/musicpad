@@ -8,7 +8,7 @@ const path = require('path');
 const { musicpadToMidi } = require('../src/musicpad.js');
 
 const ROOT = path.resolve(__dirname, '..');
-const SONGS_DIR = path.join(ROOT, 'docs', 'songs');
+const SONGS_DIR = path.join(ROOT, 'project-docs', 'songs');
 
 const EXPECTED_SONGS = {
   'Bird I.mpd': { bytes: 10112, sha256: '0faff69ded0849fad05924adace9b50603be889535cef30b3f781fd3781aa314' },
@@ -63,6 +63,12 @@ function assertValidMidi(bytes, label) {
   assert.strictEqual(offset, bytes.length, `${label}: MIDI chunk lengths do not add up`);
 }
 
+function testTrackSplitting() {
+  const implicit = musicpadToMidi('A | B', { rng: () => 0.5 });
+  const explicit = musicpadToMidi('|0 A | B', { rng: () => 0.5 });
+  assert.deepStrictEqual(Buffer.from(implicit), Buffer.from(explicit), 'A | B should be equivalent to |0 A | B');
+}
+
 function testInlineExamples() {
   const examples = [
     'c e g g+',
@@ -89,6 +95,7 @@ function testSongs() {
 }
 
 function main() {
+  testTrackSplitting();
   testInlineExamples();
   testSongs();
   console.log('musicpad tests passed');

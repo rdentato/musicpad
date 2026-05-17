@@ -12,3 +12,19 @@
 - Update: added `src/musicpad.html` to `.gitignore` as a generated build output.
 - Update: extracted inline song lists into `src/songlist.js`; `src/build` now inlines `musicpad.js`, `songlist.js`, and `A320U.sf2` into generated `src/musicpad.html`.
 - Verification: ran `src/build`; generated HTML has three inline JS scripts, song lists initialize as 15 bundled + 14 project songs, MIDI parsing and SoundFont zone smoke tests pass.
+- Session close: updated `STATE.md` and `PLAN.md` for next session. Current source of truth is `src/musicpad-html.html`, `src/musicpad.js`, `src/songlist.js`, and `src/A320U.sf2`; run `src/build` to regenerate ignored `src/musicpad.html`.
+- Last pushed commits: `8e8edda feat: add buildable soundfont playback app` and `5f98bfc refactor: extract bundled song lists`.
+- Working tree after documentation updates has only state/plan/journal changes plus untracked `old/` and `xxx/`.
+- Update: changed tutorial example buttons from Generate/download to Play; examples now call playback directly without replacing editor contents.
+- Verification: ran `src/build`; generated HTML has tutorial Play text and inline JavaScript parses.
+- Update: tutorial Play buttons now toggle to Stop while their example is active; clicking another example stops the previous playback and moves the Stop state to the new button.
+- Verification: ran `src/build`; generated HTML includes active tutorial-button tracking and inline JavaScript parses.
+- Update: rewrote `src/build` as a pure bash script; removed embedded Python. It now streams the template and substitutes placeholders with `cat`/`base64` output.
+- Verification: `bash -n src/build`, ran `src/build`, and generated HTML includes engine/songlist/SoundFont with inline JavaScript parsing successfully.
+- Update: set playback volume default to 100% and made tutorial example Play force volume to maximum before starting.
+- Verification: ran `src/build`; generated HTML contains max-volume tutorial playback path and inline JavaScript parses.
+- Investigation: fragment `ch1 i17 C E G | ch2 i25 E G B |0 F E C | A G E` does generate the final `A G E`; they are appended to track 1 at ticks 576/768/960 because after `|0`, the following bare `|` advances from track 0 to track 1.
+- Fix: corrected track splitting so the first implicit segment starts at track 0; now `A | B` is equivalent to `|0 A | B`, and the tutorial fragment appends final `A G E` to track 1 after `|0 F E C |`.
+- Tests: added regression assertion for implicit/explicit track-0 equivalence. Ran `src/build`, fragment MIDI smoke check, and generated HTML syntax check. Full `node tests/musicpad.test.js` still blocked by missing `docs/songs/Bird I.mpd` in this worktree.
+- Correction: project documentation/songs live under `project-docs/`, not `docs/`; updated tests and session/plan references accordingly.
+- Verification: `node tests/musicpad.test.js` now passes using `project-docs/songs`.

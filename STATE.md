@@ -4,23 +4,28 @@
 main
 
 ## Active Task
-None — project functionally complete.
+None — latest playback/build refactor is committed and pushed.
 
 ## Last Stop
-All milestones done: MIDI engine, download UI, single-file HTML packaging, automated tests, parser optimization. All committed.
+Added browser playback with embedded `A320U.sf2`, split the generated app into build inputs, extracted song lists, rebuilt `src/musicpad.html`, committed, and pushed.
 
 ## Open Questions
-1. Any further scope for this project?
-2. What to do with `src/m.htm` (untracked)?
+1. What to do with untracked `old/` and `xxx/`? (`old/` should be ignored by convention.)
+2. Any further UI/playback polish?
+3. Should generated `src/musicpad.html` be distributed outside git releases?
 
 ## Last Decision
-Removed browser playback-verification from scope. Same rationale as in-browser playback removal: external MIDI player is the intended listener.
+`src/musicpad.html` is generated and ignored; source of truth is `src/musicpad-html.html` + `src/musicpad.js` + `src/songlist.js` + `src/A320U.sf2`, built by `src/build`.
 
 ## Pointers
 - PLAN.md
+- src/build
+- src/musicpad-html.html
 - src/musicpad.js
-- src/musicpad.html
-- docs/musicpad.md
-- docs/musicpad.perl
-- docs/songs/*.mpd
-- journal/2026-05-12-js-port.md
+- src/songlist.js
+- src/A320U.sf2
+- src/musicpad.html (generated, ignored)
+- project-docs/musicpad.md
+- project-docs/musicpad.perl
+- project-docs/songs/*.mpd
+- journal/2026-05-17-soundfont-playback.md

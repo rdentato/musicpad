@@ -1397,7 +1397,7 @@ CB 56 Cowbell
     }
 
     expandTracks() {
-      let curtrack = 0;
+      let curtrack = -1;
       const tracks = [];
       let rest = `${this.string} |`;
       let pipe;

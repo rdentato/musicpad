@@ -3,33 +3,62 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-python3 - <<'PY'
-from pathlib import Path
-import base64
+template="musicpad-html.html"
+engine="musicpad.js"
+songlist="songlist.js"
+soundfont="A320U.sf2"
+output="musicpad.html"
 
-html_template = Path('musicpad-html.html')
-engine_file = Path('musicpad.js')
-songlist_file = Path('songlist.js')
-soundfont_file = Path('A320U.sf2')
-output_file = Path('musicpad.html')
+for file in "$template" "$engine" "$songlist" "$soundfont"; do
+  if [[ ! -f "$file" ]]; then
+    printf 'missing required file: %s\n' "$file" >&2
+    exit 1
+  fi
+done
 
-template = html_template.read_text()
-engine = engine_file.read_text()
-songlist = songlist_file.read_text()
-soundfont = base64.encodebytes(soundfont_file.read_bytes()).decode('ascii')
+tmp="$(mktemp "${output}.tmp.XXXXXX")"
+trap 'rm -f "$tmp"' EXIT
 
-engine_block = f'  <script>\n{engine}\n  </script>'
-songlist_block = f'  <script>\n{songlist}\n  </script>'
-soundfont_block = f'  <script id="soundFontA320U" type="application/octet-stream">\n{soundfont}</script>'
+found_engine=0
+found_songlist=0
+found_soundfont=0
 
-placeholders = ('<!-- MUSICPAD_JS -->', '<!-- SONGLIST_JS -->', '<!-- SOUNDFONT_A320U -->')
-missing = [name for name in placeholders if name not in template]
-if missing:
-    raise SystemExit(f'missing placeholder(s): {", ".join(missing)}')
+while IFS= read -r line || [[ -n "$line" ]]; do
+  case "$line" in
+    '  <!-- MUSICPAD_JS -->')
+      printf '  <script>\n'
+      cat "$engine"
+      printf '\n  </script>\n'
+      found_engine=1
+      ;;
+    '  <!-- SONGLIST_JS -->')
+      printf '  <script>\n'
+      cat "$songlist"
+      printf '\n  </script>\n'
+      found_songlist=1
+      ;;
+    '  <!-- SOUNDFONT_A320U -->')
+      printf '  <script id="soundFontA320U" type="application/octet-stream">\n'
+      base64 "$soundfont"
+      printf '</script>\n'
+      found_soundfont=1
+      ;;
+    *)
+      printf '%s\n' "$line"
+      ;;
+  esac
+done < "$template" > "$tmp"
 
-output = template.replace('  <!-- MUSICPAD_JS -->', engine_block, 1)
-output = output.replace('  <!-- SONGLIST_JS -->', songlist_block, 1)
-output = output.replace('  <!-- SOUNDFONT_A320U -->', soundfont_block, 1)
-output_file.write_text(output)
-print(f'wrote {output_file}')
-PY
+missing=()
+[[ "$found_engine" -eq 1 ]] || missing+=(MUSICPAD_JS)
+[[ "$found_songlist" -eq 1 ]] || missing+=(SONGLIST_JS)
+[[ "$found_soundfont" -eq 1 ]] || missing+=(SOUNDFONT_A320U)
+
+if [[ "${#missing[@]}" -gt 0 ]]; then
+  printf 'missing placeholder(s): %s\n' "${missing[*]}" >&2
+  exit 1
+fi
+
+mv "$tmp" "$output"
+trap - EXIT
+printf 'wrote %s\n' "$output"

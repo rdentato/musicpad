@@ -275,7 +275,7 @@
           <div class="volume-selector">
             <button id="volume" type="button" aria-haspopup="true" aria-expanded="false" title="sets playback volume">Vol</button>
             <div id="volumePanel" class="volume-panel" hidden>
-              <input id="volumeSlider" type="range" min="0" max="100" value="80" orient="vertical" aria-label="Playback volume">
+              <input id="volumeSlider" type="range" min="0" max="100" value="100" orient="vertical" aria-label="Playback volume">
             </div>
           </div>
         </div>
@@ -858,11 +858,23 @@ $riff $riff*3</pre>
     let audioContext;
     let soundFontPromise;
     let currentPlayer;
+    let activeExampleButton;
     let playbackVolume = Number(volumeSlider.value) / 100;
 
     function setPlaying(isPlaying) {
       play.textContent = isPlaying ? 'Stop' : 'Play';
       play.title = isPlaying ? 'stops playback' : 'plays generated MIDI with the embedded A320U SoundFont';
+    }
+
+    function setExampleButtonPlaying(button, isPlaying) {
+      if (!button) return;
+      button.textContent = isPlaying ? 'Stop' : 'Play';
+      button.title = isPlaying ? 'stops this tutorial example' : 'plays this tutorial example';
+    }
+
+    function resetActiveExampleButton() {
+      setExampleButtonPlaying(activeExampleButton, false);
+      activeExampleButton = null;
     }
 
     function closeVolumePanel() {
@@ -878,11 +890,16 @@ $riff $riff*3</pre>
       volume.setAttribute('aria-expanded', String(!volumePanel.hidden));
     }
 
-    function updatePlaybackVolume() {
-      playbackVolume = Number(volumeSlider.value) / 100;
+    function setPlaybackVolume(value) {
+      playbackVolume = clamp(value, 0, 1);
+      volumeSlider.value = String(Math.round(playbackVolume * 100));
       if (currentPlayer) {
         currentPlayer.synth.masterGain.gain.setValueAtTime(playbackVolume, currentPlayer.audioContext.currentTime);
       }
+    }
+
+    function updatePlaybackVolume() {
+      setPlaybackVolume(Number(volumeSlider.value) / 100);
     }
 
     function bytesToText(view, offset, length) {
@@ -1568,36 +1585,47 @@ $riff $riff*3</pre>
 
     function stopPlayback(message) {
       if (currentPlayer) {
-        currentPlayer.stopNow();
+        const player = currentPlayer;
         currentPlayer = null;
+        player.stopNow();
       }
+      resetActiveExampleButton();
       setPlaying(false);
       if (message) status.textContent = message;
     }
 
-    async function playEditorSource() {
+    async function playMusicpadSource(musicpadSource, label, exampleButton) {
       try {
         stopPlayback();
         setPlaying(true);
         status.textContent = 'Generating MIDI...';
-        const midiBytes = musicpadToMidi(source.value);
+        const midiBytes = musicpadToMidi(musicpadSource);
         const midi = parseMidi(midiBytes);
 
         status.textContent = 'Loading embedded SoundFont...';
         const context = await getAudioContext();
         const soundFont = await getSoundFont();
         const synth = new SoundFontSynth(context, soundFont);
-        currentPlayer = new MidiPlayer(context, synth, midi);
-        currentPlayer.onended = () => {
-          if (currentPlayer) currentPlayer = null;
+        const player = new MidiPlayer(context, synth, midi);
+        currentPlayer = player;
+        activeExampleButton = exampleButton || null;
+        setExampleButtonPlaying(activeExampleButton, true);
+        player.onended = () => {
+          if (currentPlayer !== player) return;
+          currentPlayer = null;
+          resetActiveExampleButton();
           setPlaying(false);
           status.textContent = 'Playback finished.';
         };
-        currentPlayer.play();
-        status.textContent = `Playing generated MIDI (${Math.round(midi.duration)}s).`;
+        player.play();
+        status.textContent = `Playing ${label} (${Math.round(midi.duration)}s).`;
       } catch (error) {
         stopPlayback(error.message);
       }
+    }
+
+    function playEditorSource() {
+      return playMusicpadSource(source.value, 'generated MIDI');
     }
 
     pageSelector.addEventListener('click', togglePageMenu);
@@ -1636,14 +1664,13 @@ $riff $riff*3</pre>
       const button = document.createElement('button');
       button.type = 'button';
       button.className = 'example-generate';
-      button.textContent = 'Generate';
-      button.title = 'downloads MIDI file for this tutorial example';
+      button.textContent = 'Play';
+      button.title = 'plays this tutorial example';
       button.addEventListener('click', () => {
-        try {
-          generateMidiDownload(example.textContent.trim(), `musicpad-example-${index + 1}.mid`);
-          status.textContent = ''; 
-        } catch (error) {
-          status.textContent = error.message;
+        if (activeExampleButton === button && currentPlayer) stopPlayback('Playback stopped.');
+        else {
+          setPlaybackVolume(1);
+          playMusicpadSource(example.textContent.trim(), `tutorial example ${index + 1}`, button);
         }
       });
       example.insertAdjacentElement('afterend', button);
