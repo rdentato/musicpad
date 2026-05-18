@@ -264,10 +264,11 @@
             </div>
           </div>
           <div class="download-selector">
-            <button id="download" type="button" title="downloads source or MIDI" aria-haspopup="true" aria-expanded="false">Download</button>
+            <button id="download" type="button" title="downloads source, MIDI, or MusicXML" aria-haspopup="true" aria-expanded="false">Download</button>
             <div id="downloadMenu" class="download-menu" hidden>
               <button id="downloadSource" type="button">Source (.mpd)</button>
               <button id="downloadMidi" type="button">MIDI (.mid)</button>
+              <button id="downloadMusicXml" type="button">MusicXML (.musicxml)</button>
             </div>
           </div>
           <input id="file" type="file" accept=".mpd,.txt,text/*" hidden>
@@ -378,6 +379,7 @@ $intro ($bar2 $bar1)*2</textarea>
     const downloadMenu = document.getElementById('downloadMenu');
     const downloadSource = document.getElementById('downloadSource');
     const downloadMidi = document.getElementById('downloadMidi');
+    const downloadMusicXml = document.getElementById('downloadMusicXml');
     const play = document.getElementById('play');
     const volume = document.getElementById('volume');
     const volumePanel = document.getElementById('volumePanel');
@@ -464,6 +466,12 @@ $intro ($bar2 $bar1)*2</textarea>
       const midi = musicpadToMidi(musicpadSource);
       downloadBlob(new Blob([midi], { type: 'audio/midi' }), filename);
       return midi.length;
+    }
+
+    function generateMusicXmlDownload(musicpadSource, filename) {
+      const xml = musicpadToMusicXml(musicpadSource);
+      downloadBlob(new Blob([xml], { type: 'application/vnd.recordare.musicxml+xml' }), filename);
+      return xml.length;
     }
 
 
@@ -1334,6 +1342,16 @@ $intro ($bar2 $bar1)*2</textarea>
       closeDownloadMenu();
       try {
         generateMidiDownload(source.value, 'musicpad.mid');
+        status.textContent = '';
+      } catch (error) {
+        status.textContent = error.message;
+      }
+    });
+
+    downloadMusicXml.addEventListener('click', () => {
+      closeDownloadMenu();
+      try {
+        generateMusicXmlDownload(source.value, 'musicpad.musicxml');
         status.textContent = '';
       } catch (error) {
         status.textContent = error.message;

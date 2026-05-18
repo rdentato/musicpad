@@ -1202,7 +1202,56 @@ CB 56 Cowbell
   const GUITAR_FRET_CACHE = new Map();
 
   function musicpadToMidi(source, options) {
-    return new MusicpadEngine(options).render(source);
+    return musicpadIrToMidi(musicpadToIr(source, options));
+  }
+
+  function musicpadToIr(source, options) {
+    return new MusicpadEngine(options).renderIr(source);
+  }
+
+  function musicpadIrToMidi(ir) {
+    const mtracks = ir.tracks.map(irTrackToMidiTrack);
+    return midiBytesFromTracks(ir.ppqn, ir.tempoBpm, mtracks);
+  }
+
+  function musicpadToMusicXml(source, options) {
+    return musicpadIrToMusicXml(musicpadToIr(source, options), options);
+  }
+
+  function musicpadIrToMusicXml(ir, options) {
+    const settings = options || {};
+    const beats = valueOr(settings.beats, 4);
+    const beatType = valueOr(settings.beatType, 4);
+    const measureTicks = ir.ppqn * beats * (4 / beatType);
+    const parts = ir.tracks.map((track, index) => ({ id: `P${index + 1}`, track }));
+    let maxTick = measureTicks;
+    for (const track of ir.tracks) {
+      for (const event of track.events) {
+        if (event.kind === 'noteGroup' || event.kind === 'rest') maxTick = Math.max(maxTick, event.tick + event.durationTicks);
+        else maxTick = Math.max(maxTick, event.tick);
+      }
+    }
+    const measureCount = Math.max(1, Math.ceil(maxTick / measureTicks));
+    const out = [
+      '<?xml version="1.0" encoding="UTF-8"?>',
+      '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">',
+      '<score-partwise version="3.1">',
+      '  <part-list>'
+    ];
+
+    for (const part of parts) {
+      out.push(`    <score-part id="${part.id}"><part-name>Track ${part.track.index}</part-name></score-part>`);
+    }
+    out.push('  </part-list>');
+
+    for (const part of parts) {
+      out.push(`  <part id="${part.id}">`);
+      writeMusicXmlPart(out, part.track, ir.ppqn, beats, beatType, measureTicks, measureCount);
+      out.push('  </part>');
+    }
+
+    out.push('</score-partwise>');
+    return `${out.join('\n')}\n`;
   }
 
   class MusicpadEngine {
@@ -1232,6 +1281,28 @@ CB 56 Cowbell
     }
 
     render(source) {
+      return musicpadIrToMidi(this.renderIr(source));
+    }
+
+    renderIr(source) {
+      this.prepareSource(source);
+      const tracks = this.expandTracks();
+      const irTracks = [];
+
+      for (let index = 0; index < tracks.length; index += 1) {
+        const track = tracks[index];
+        if (track == null || /^\s*$/.test(track)) continue;
+        irTracks.push(this.addTrackIr(track, index));
+      }
+
+      return {
+        ppqn: this.ppqn,
+        tempoBpm: this.tempo,
+        tracks: irTracks
+      };
+    }
+
+    prepareSource(source) {
       this.reset();
       if (source == null) source = 'c e g g+';
 
@@ -1247,14 +1318,6 @@ CB 56 Cowbell
       this.string = compactSpaces(this.string);
 
       this.processMacro();
-      const tracks = this.expandTracks();
-
-      for (const track of tracks) {
-        if (track == null || /^\s*$/.test(track)) continue;
-        this.addTrack(track);
-      }
-
-      return this.postOut();
     }
 
     globalSettings() {
@@ -1414,6 +1477,462 @@ CB 56 Cowbell
         tracks[curtrack] = (tracks[curtrack] || '') + temptrack;
       }
       return tracks;
+    }
+
+    addTrackIr(trackSource, trackIndex) {
+      let seqtime = 0;
+      let abstime = 0;
+      let nlength = 4;
+      let octave = 4;
+      let note = 65;
+      let chord = [note];
+      let chan = 0;
+      let nratio = 1;
+      let nduty = this.gduty / 100;
+      let vel = this.gvel;
+      let trans = 0;
+      let nivstress = 50;
+      let nivsoft = 25;
+      let loosew = this.timeToTick(this.gloosew);
+      let looseq = this.glooseq;
+      let velvarw = this.gvelvarw;
+      let velvarq = this.gvelvarq;
+      let guitmode = this.globalguitmode;
+      let strumdelay = 0;
+      let strumup = 0;
+      let strumhitdown = 0;
+      let strumupvel = 100;
+      let tuning = [40, 45, 50, 55, 59, 64];
+      let tommode = 0;
+      let previousnotetime = 0;
+      const events = [];
+
+      const values = tokenizeTrackSource(trackSource);
+      for (let command of values) {
+        const sourceToken = command;
+        let notation = {};
+        let pause = 0;
+        let stress = 0;
+        let soft = 0;
+        let hold = 1;
+        let deltanote = 0;
+        let temptrans = 0;
+        let match;
+
+        if (command.length === 0) continue;
+        const lower = command.toLowerCase();
+
+        if (lower.includes('tuning[') && (match = command.match(/tuning\[(.*)\]/i))) {
+          const tuningcommand = match[1];
+          tuning = tuningcommand.split(',').map((part) => {
+            const tun = part.match(/([A-G][b#\+-]?)(\d)/i);
+            if (!tun) this.error(`tuning definition problem in ${tuningcommand} : I don't understand ${part}`);
+            const mapped = NOTE_MAP[tun[1].toUpperCase()];
+            if (mapped == null) this.error(`tuning definition problem in ${tuningcommand} : I don't understand ${part}`);
+            return mapped + 12 * Number(tun[2]);
+          });
+          continue;
+        }
+
+        if (command.includes('[')) {
+          if ((match = command.match(/\[(-?\d+,.*)\]/i))) {
+            command = command.replace(/\[(-?\d+,.*)\]/i, '');
+            const intervals = numberList(match[1]);
+            chord = intervals.map((n) => n + note);
+            notation = { chordKind: 'numeric', chordSource: `[${match[1]}]`, intervals };
+          }
+
+          if ((match = command.match(/\[g:((-|\d+),.*)\]/i))) {
+            command = command.replace(/\[g:((-|\d+),.*)\]/i, '');
+            const frets = guitarFretList(match[1]);
+            chord = guitarChord(frets, tuning);
+            notation = { chordKind: 'guitarFrets', chordSource: `[g:${match[1]}]`, frets };
+          }
+
+          if ((match = command.match(/\[g:(.*)\]/i))) {
+            command = command.replace(/\[g:(.*)\]/i, '');
+            let keycommand = match[1];
+            const chordName = keycommand;
+            if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) {
+              keycommand = keycommand.replace(/:.*/i, '');
+              if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know guitar chord ${match[1]}`);
+            }
+            const fretSpec = GUITAR_CHORDS[keycommand.toUpperCase()];
+            const frets = Array.isArray(fretSpec) ? fretSpec : guitarFretList(fretSpec);
+            chord = guitarChord(frets, tuning);
+            notation = { chordKind: 'guitarNamed', chordSource: `[g:${chordName}]`, frets };
+          }
+
+          if ((match = command.match(/\[(.*)\]/i))) {
+            command = command.replace(/\[(.*)\]/i, '');
+            let keycommand = match[1];
+            const keycommand2 = match[1];
+            let rootName = null;
+            let chordType = keycommand;
+            if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
+              const root = keycommand.match(/^([A-G][b#\+-]?)/i);
+              if (root) {
+                const keynote = root[1];
+                rootName = keynote.toUpperCase();
+                keycommand = keycommand.replace(/^([A-G][b#\+-]?)/i, '');
+                chordType = keycommand;
+                if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
+                  keycommand = keycommand.replace(/:.*/i, '');
+                  if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand} in ${keycommand2}`);
+                }
+                const mapped = NOTE_MAP[keynote.toUpperCase()];
+                if (mapped == null) this.error(`I don't know note ${keynote} in ${keycommand2}`);
+                note = mapped + 12 * octave;
+              } else {
+                keycommand = keycommand.replace(/:.*/i, '');
+                chordType = keycommand;
+                if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand2}`);
+              }
+            }
+            chord = KEY_CHORDS[keycommand.toUpperCase()].map((n) => n + note);
+            notation = { chordKind: 'keyboardNamed', chordSource: `[${keycommand2}]`, chordType };
+            if (rootName != null) notation.root = rootName;
+          }
+        }
+
+        if (lower.startsWith('strum')) {
+          const strum = lower.slice(5).split(',');
+          strumdelay = this.timeToTick(Number(strum[0]));
+          if (strum.length > 1) strumup = this.timeToTick(Number(strum[1]));
+          if (strum.length > 2) strumupvel = Number(strum[2]);
+          continue;
+        }
+        if (lower.startsWith('tomson')) {
+          tommode = 1;
+          chan = (10 - 1) & 0xF;
+          note = DRUM_MAP.T4;
+          chord = [note];
+          continue;
+        }
+        if (lower.startsWith('tomsoff')) {
+          tommode = 0;
+          continue;
+        }
+        if (lower.startsWith('guiton')) {
+          guitmode = 1;
+          continue;
+        }
+        if (lower.startsWith('guitoff')) {
+          guitmode = 0;
+          continue;
+        }
+        if (lower.startsWith('stress') && hasDigit(command)) {
+          nivstress = Number(command.slice(6));
+          continue;
+        }
+        if (lower.startsWith('soft') && hasDigit(command)) {
+          nivsoft = Number(command.slice(4));
+          continue;
+        }
+        if (lower.startsWith('loose')) {
+          const parts = command.slice(5).split(',');
+          loosew = this.timeToTick(Number(parts[0]));
+          looseq = parts[1];
+          continue;
+        }
+        if (lower.startsWith('velvar')) {
+          const parts = command.slice(6).split(',');
+          velvarw = Number(parts[0]);
+          velvarq = parts[1];
+          continue;
+        }
+        if (lower.startsWith('ctrl')) {
+          const parts = command.slice(4).split(',');
+          seqtime = round(abstime);
+          events.push({ kind: 'controlChange', sourceToken, tick: seqtime, channel: chan, controller: Number(parts[0]), value: Number(parts[1]) });
+          continue;
+        }
+        if (lower.startsWith('sysex')) {
+          const data = command.slice(5).split(',').filter((v) => v.length).map(Number);
+          seqtime = round(abstime);
+          events.push({ kind: 'sysex', sourceToken, tick: seqtime, data });
+          continue;
+        }
+        if (lower.startsWith('pitch+')) {
+          const pitch = clamp((8192 * Number(command.slice(6)) / 100) + 8192, 0, 16383);
+          seqtime = round(abstime);
+          events.push({ kind: 'pitchBend', sourceToken, tick: seqtime, channel: chan, value14: pitch });
+          continue;
+        }
+        if (lower.startsWith('pitch-')) {
+          const pitch = clamp(8192 - (8192 * Number(command.slice(6)) / 100), 0, 16383);
+          seqtime = round(abstime);
+          events.push({ kind: 'pitchBend', sourceToken, tick: seqtime, channel: chan, value14: pitch });
+          continue;
+        }
+        if (lower.startsWith('pitch0')) {
+          seqtime = round(abstime);
+          events.push({ kind: 'pitchBend', sourceToken, tick: seqtime, channel: chan, value14: 8192 });
+          continue;
+        }
+
+        if (lower.startsWith('ch') && hasDigit(command)) {
+          chan = (Number(command.slice(2)) - 1) & 0xF;
+          continue;
+        }
+        if (lower[0] === 'i' && isDigitCode(lower.charCodeAt(1))) {
+          const program = Number(command.slice(1));
+          events.push({ kind: 'programChange', sourceToken, tick: seqtime, channel: chan, program: program === 0 ? 0 : program - 1 });
+          continue;
+        }
+        if (lower[0] === 'i' && command.length > 1) {
+          const drumCode = command.slice(1).toUpperCase();
+          const drum = DRUM_MAP[drumCode];
+          if (drum != null) {
+            note = drum;
+            chan = (10 - 1) & 0xF;
+            chord = [note];
+            events.push({ kind: 'drumInstrument', sourceToken, tick: round(abstime), channel: chan, drumCode, midiPitch: note });
+            continue;
+          }
+        }
+        if (lower[0] === 'i' && command.length > 1) {
+          const instrumentName = command.slice(1).toUpperCase();
+          const program = INSTRUMENT_MAP[instrumentName];
+          if (program != null) {
+            events.push({ kind: 'programChange', sourceToken, tick: seqtime, channel: chan, program, instrumentName });
+            continue;
+          }
+        }
+        if (lower[0] === 'i' && command.length >= 3) {
+          const drumCode = command.slice(1, 3).toUpperCase();
+          const drum = DRUM_MAP[drumCode];
+          if (drum != null) {
+            note = drum;
+            chan = (10 - 1) & 0xF;
+            chord = [note];
+            events.push({ kind: 'drumInstrument', sourceToken, tick: round(abstime), channel: chan, drumCode, midiPitch: note });
+          }
+          continue;
+        }
+        if (lower.startsWith('nt+') && isDigitCode(lower.charCodeAt(3))) {
+          temptrans = Number(command[3]);
+          command = command.slice(0, 0) + command.slice(4);
+        }
+        if (lower.startsWith('nt-') && isDigitCode(lower.charCodeAt(3))) {
+          temptrans = -Number(command[3]);
+          command = command.slice(0, 0) + command.slice(4);
+        }
+
+        const currentLower = command.toLowerCase();
+        if (currentLower[0] === 'r') {
+          const slash = command.indexOf('/');
+          if (slash > 1) {
+            nratio = Number(command.slice(1, slash)) / Number(command.slice(slash + 1));
+            continue;
+          }
+        }
+        if (currentLower.startsWith('r1')) {
+          nratio = 1;
+          continue;
+        }
+        if (currentLower[0] === 'u' && hasDigit(command)) {
+          nduty = Number(command.slice(1)) / 100;
+          continue;
+        }
+        if (currentLower[0] === 'v' && hasDigit(command)) {
+          vel = Number(command.slice(1));
+          continue;
+        }
+        if (currentLower.startsWith('t+')) {
+          trans = Number(command.slice(2));
+          continue;
+        }
+        if (currentLower.startsWith('t0')) {
+          trans = 0;
+          continue;
+        }
+        if (currentLower.startsWith('t-')) {
+          trans = -Number(command.slice(2));
+          continue;
+        }
+
+        if (command === '/') {
+          octave += 1;
+          continue;
+        }
+        if (command === '\\') {
+          octave -= 1;
+          continue;
+        }
+
+        if (command.includes('/') && (match = command.match(/\/(\d+)/i))) {
+          nlength = Number(match[1]);
+          notation.lengthDenominator = nlength;
+          command = command.replace(/\/(\d+)/i, '');
+        }
+        if (hasNoteOrO(command) && (match = command.match(/([A-GO][b#\+-]?)(\d)/i))) {
+          octave = Number(match[2]);
+          command = command.replace(/([A-GO][b#\+-]?)(\d)/i, match[1]);
+        }
+        if (hasNote(command) && (match = command.match(/([A-G][b#\+-]?)/i))) {
+          const mapped = NOTE_MAP[match[1].toUpperCase()];
+          if (mapped != null) {
+            note = mapped + 12 * octave;
+            chord = [note];
+            notation.noteSpelling = match[1].toUpperCase();
+          }
+          command = command.replace(/([A-G][b#\+-]?)/i, '');
+        }
+        if (lower.includes('n+') && (match = command.match(/N\+(\d)/i))) {
+          deltanote = Number(match[1]);
+          command = command.replace(/N\+(\d)/i, '');
+        }
+        if (lower.includes('n-') && (match = command.match(/N-(\d)/i))) {
+          deltanote = -Number(match[1]);
+          command = command.replace(/N-(\d)/i, '');
+        }
+        if (lower.includes('n') && (match = command.match(/N(\d+)/i))) {
+          note = Number(match[1]);
+          chord = [note];
+          command = command.replace(/N(\d+)/i, '');
+        }
+
+        if (command.includes('o') || command.includes('O')) continue;
+
+        if (command.includes('=')) {
+          hold += countChar(command, '=');
+          notation.explicitHold = true;
+          notation.holdCount = hold - 1;
+          command = command.replace(/=/g, '');
+        }
+        if (command.includes('P') || command.includes('p')) {
+          pause = 1;
+          notation.explicitPause = true;
+          command = command.replace(/P/i, '');
+        }
+        if (command.includes('-')) {
+          pause = 1;
+          notation.explicitRest = true;
+          command = command.replace('-', '');
+        }
+        if (command.includes("'")) {
+          stress = 1;
+          notation.stress = true;
+          notation.stressPercent = nivstress;
+          command = command.replace("'", '');
+        }
+        if (command.includes(',')) {
+          soft = 1;
+          notation.soft = true;
+          notation.softPercent = nivsoft;
+          command = command.replace(',', '');
+        }
+        if (hasDigit(command) && (match = command.match(/(\d+)/i))) {
+          if (guitmode) {
+            temptrans = Number(match[1]);
+          } else if (tommode) {
+            const drum = DRUM_MAP[`T${match[1]}`];
+            if (drum != null) {
+              note = drum;
+              chord = [note];
+            }
+          } else {
+            nlength = Number(match[1]);
+            notation.lengthDenominator = nlength;
+          }
+        }
+        if (notation.lengthDenominator == null) notation.lengthDenominator = nlength;
+
+        if (!nlength) this.error("You seem to be trying to play a note of length 1/0 ... Haven't you mixed the guitar mode with normal mode ?");
+        let length = (1 / nlength) * nratio * hold;
+        length *= this.ppqn * 4;
+        if (deltanote) {
+          note += deltanote;
+          chord = [note];
+        }
+        if (pause) {
+          events.push({ kind: 'rest', sourceToken, tick: round(abstime), durationTicks: round(length), notation });
+          abstime += length;
+          continue;
+        }
+
+        let chordtemp;
+        let strumDirection;
+        if (strumup && (abstime - previousnotetime) < strumup && strumhitdown) {
+          chordtemp = [...chord].reverse();
+          strumhitdown = 0;
+          strumDirection = 'up';
+        } else {
+          chordtemp = [...chord];
+          strumhitdown = 1;
+          strumDirection = strumdelay ? 'down' : undefined;
+        }
+
+        let lvel = vel * (1 + velvarw * this.rndq(velvarq) / 100) * (strumhitdown ? 1 : strumupvel / 100);
+        if (stress) lvel *= (1 + nivstress / 100);
+        if (soft) lvel *= (1 - nivsoft / 100);
+        lvel = clamp(round(lvel), 0, 127);
+
+        const ticksOn = nduty * length;
+        const ticksOff = (1 - nduty) * length;
+        const eventStart = round(abstime);
+        const emittedNotes = [];
+        let firstnote = true;
+        let abstimetemp = abstime;
+        const noteOns = [];
+        previousnotetime = abstime;
+
+        for (const chnote of chordtemp) {
+          const fnote = clamp(chnote + trans + temptrans, 0, 127);
+          let deltaOn;
+          if (firstnote) {
+            abstimetemp = abstime + loosew * this.rndq(looseq);
+            deltaOn = round(abstimetemp) - seqtime;
+            if (deltaOn <= round(loosew) * 2) {
+              abstimetemp -= deltaOn;
+              deltaOn = 0;
+            }
+            firstnote = false;
+          } else {
+            abstimetemp += strumdelay;
+            deltaOn = round(abstimetemp) - seqtime;
+          }
+          seqtime += deltaOn;
+          noteOns.push({ midiPitch: fnote, startTick: seqtime, channel: chan, velocity: lvel });
+        }
+
+        abstime += ticksOn;
+        firstnote = true;
+        for (const noteOn of noteOns) {
+          let deltaOff;
+          if (firstnote) {
+            deltaOff = round(abstime + loosew * this.rndq(looseq)) - seqtime;
+            if (deltaOff < 0) deltaOff = 0;
+            firstnote = false;
+          } else {
+            deltaOff = 0;
+          }
+          seqtime += deltaOff;
+          emittedNotes.push({ ...noteOn, endTick: seqtime });
+        }
+
+        if (strumdelay) {
+          notation.strumDirection = strumDirection;
+          notation.strumDelayTicks = strumdelay;
+        }
+
+        events.push({
+          kind: 'noteGroup',
+          sourceToken,
+          tick: eventStart,
+          durationTicks: round(length),
+          channel: chan,
+          velocity: lvel,
+          midiPitches: chord.map((chnote) => clamp(chnote + trans + temptrans, 0, 127)),
+          emittedNotes,
+          notation
+        });
+
+        abstime += ticksOff;
+      }
+
+      return { index: trackIndex, events };
     }
 
     addTrack(trackSource) {
@@ -1859,35 +2378,7 @@ CB 56 Cowbell
     }
 
     postOut() {
-      const pretrack = [];
-      pushAscii(pretrack, 'MThd');
-      pushUint32(pretrack, 6);
-      pushUint16(pretrack, 1);
-      pushUint16(pretrack, this.mtracks.length);
-      pushUint16(pretrack, this.ppqn);
-
-      let wholetrack = [...pretrack];
-      const tempoMicros = 1000000 * 60 / this.tempo;
-      let pretrackOutput = false;
-      const meta = [];
-      pushBytes(meta, 0, 0xFF, 1, VERSION.length);
-      pushAscii(meta, VERSION);
-      pushBytes(meta, 0, 0xFF, 0x51, 3, (tempoMicros >> 16) & 0xFF, (tempoMicros >> 8) & 0xFF, tempoMicros & 0xFF);
-
-      for (const mtrack of this.mtracks) {
-        if (!pretrackOutput) {
-          const first = meta.concat(mtrack);
-          pushAscii(wholetrack, 'MTrk');
-          pushUint32(wholetrack, first.length);
-          wholetrack = wholetrack.concat(first);
-          pretrackOutput = true;
-        } else {
-          pushAscii(wholetrack, 'MTrk');
-          pushUint32(wholetrack, mtrack.length);
-          wholetrack = wholetrack.concat(mtrack);
-        }
-      }
-      return new Uint8Array(wholetrack);
+      return midiBytesFromTracks(this.ppqn, this.tempo, this.mtracks);
     }
 
     getBound(stringa, startp, opendelim, closedelim) {
@@ -2167,6 +2658,354 @@ CB 56 Cowbell
     return chord;
   }
 
+  function writeMusicXmlPart(out, track, ppqn, beats, beatType, measureTicks, measureCount) {
+    const measureEvents = new Map();
+
+    function addSegment(measureIndex, segment) {
+      if (!measureEvents.has(measureIndex)) measureEvents.set(measureIndex, []);
+      measureEvents.get(measureIndex).push(segment);
+    }
+
+    for (const event of track.events) {
+      if (event.kind === 'noteGroup' || event.kind === 'rest') {
+        const end = event.tick + event.durationTicks;
+        let cursor = event.tick;
+        while (cursor < end) {
+          const measureIndex = Math.floor(cursor / measureTicks);
+          const measureEnd = (measureIndex + 1) * measureTicks;
+          const segmentEnd = Math.min(end, measureEnd);
+          addSegment(measureIndex, {
+            event,
+            startTick: cursor,
+            durationTicks: segmentEnd - cursor,
+            tieStart: segmentEnd < end,
+            tieStop: cursor > event.tick
+          });
+          cursor = segmentEnd;
+        }
+      } else {
+        addSegment(Math.floor(event.tick / measureTicks), { event, startTick: event.tick, durationTicks: 0 });
+      }
+    }
+
+    for (let measureIndex = 0; measureIndex < measureCount; measureIndex += 1) {
+      out.push(`    <measure number="${measureIndex + 1}">`);
+      if (measureIndex === 0) {
+        out.push('      <attributes>');
+        out.push(`        <divisions>${ppqn}</divisions>`);
+        out.push('        <key><fifths>0</fifths></key>');
+        out.push(`        <time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>`);
+        out.push('        <clef><sign>G</sign><line>2</line></clef>');
+        out.push('      </attributes>');
+      }
+
+      const segments = (measureEvents.get(measureIndex) || []).sort((a, b) => a.startTick - b.startTick);
+      const items = [];
+      const measureStart = round(measureIndex * measureTicks);
+      const measureEnd = round((measureIndex + 1) * measureTicks);
+      let cursor = measureStart;
+      for (const segment of segments) {
+        if (segment.event.kind !== 'noteGroup' && segment.event.kind !== 'rest') {
+          items.push({ kind: 'segment', segment });
+          continue;
+        }
+        const segmentStart = round(segment.startTick);
+        const segmentEnd = round(segment.startTick + segment.durationTicks);
+        if (segmentStart > cursor) {
+          appendMusicXmlRestItem(items, segmentStart - cursor);
+          cursor = segmentStart;
+        }
+        const effectiveStart = Math.max(segmentStart, cursor);
+        const durationTicks = segmentEnd - effectiveStart;
+        if (durationTicks > 0) {
+          if (segment.event.kind === 'rest') appendMusicXmlRestItem(items, durationTicks);
+          else items.push({ kind: 'segment', segment: { ...segment, startTick: effectiveStart, durationTicks } });
+        }
+        cursor = Math.max(cursor, segmentEnd);
+      }
+      if (cursor < measureEnd) appendMusicXmlRestItem(items, measureEnd - cursor);
+      for (const item of items) {
+        if (item.kind === 'rest') writeMusicXmlRest(out, item.durationTicks);
+        else writeMusicXmlSegment(out, item.segment);
+      }
+      out.push('    </measure>');
+    }
+  }
+
+  function appendMusicXmlRestItem(items, durationTicks) {
+    if (durationTicks <= 0) return;
+    const last = items[items.length - 1];
+    if (last && last.kind === 'rest') last.durationTicks += durationTicks;
+    else items.push({ kind: 'rest', durationTicks });
+  }
+
+  function writeMusicXmlSegment(out, segment) {
+    const event = segment.event;
+    if (event.kind === 'rest') {
+      writeMusicXmlRest(out, segment.durationTicks);
+      return;
+    }
+
+    if (event.kind !== 'noteGroup') {
+      writeMusicXmlDirection(out, musicXmlTimelineWords(event));
+      return;
+    }
+
+    const harmony = musicXmlHarmony(event.notation);
+    if (harmony) out.push(harmony);
+    if (event.notation && event.notation.stress) writeMusicXmlDynamics(out, 'f');
+    if (event.notation && event.notation.soft) writeMusicXmlDynamics(out, 'p');
+    if (event.notation && event.notation.strumDirection) writeMusicXmlDirection(out, `strum ${event.notation.strumDirection}`);
+
+    const durations = musicXmlDurationComponents(segment.durationTicks);
+    for (let componentIndex = 0; componentIndex < durations.length; componentIndex += 1) {
+      const component = durations[componentIndex];
+      const tieStart = segment.tieStart || componentIndex < durations.length - 1;
+      const tieStop = segment.tieStop || componentIndex > 0;
+      for (let i = 0; i < event.midiPitches.length; i += 1) {
+        writeMusicXmlNote(out, event, event.midiPitches[i], component, i > 0, tieStart, tieStop);
+      }
+    }
+  }
+
+  function writeMusicXmlRest(out, duration) {
+    if (duration <= 0) return;
+    for (const component of musicXmlDurationComponents(duration)) {
+      out.push('      <note>');
+      out.push('        <rest/>');
+      out.push(`        <duration>${component.duration}</duration>`);
+      out.push(`        <type>${component.type}</type>`);
+      for (let i = 0; i < component.dots; i += 1) out.push('        <dot/>');
+      out.push('      </note>');
+    }
+  }
+
+  function writeMusicXmlNote(out, event, midiPitch, durationComponent, isChordTone, tieStart, tieStop) {
+    const pitch = musicXmlPitch(midiPitch, isChordTone ? null : event.notation && event.notation.noteSpelling);
+    out.push('      <note>');
+    if (isChordTone) out.push('        <chord/>');
+    out.push('        <pitch>');
+    out.push(`          <step>${pitch.step}</step>`);
+    if (pitch.alter) out.push(`          <alter>${pitch.alter}</alter>`);
+    out.push(`          <octave>${pitch.octave}</octave>`);
+    out.push('        </pitch>');
+    out.push(`        <duration>${durationComponent.duration}</duration>`);
+    out.push(`        <type>${durationComponent.type}</type>`);
+    for (let i = 0; i < durationComponent.dots; i += 1) out.push('        <dot/>');
+    if (tieStop) out.push('        <tie type="stop"/>');
+    if (tieStart) out.push('        <tie type="start"/>');
+    if (tieStart || tieStop || (event.notation && event.notation.strumDirection)) {
+      out.push('        <notations>');
+      if (tieStop) out.push('          <tied type="stop"/>');
+      if (tieStart) out.push('          <tied type="start"/>');
+      if (event.notation && event.notation.strumDirection && !isChordTone) out.push('          <arpeggiate/>');
+      out.push('        </notations>');
+    }
+    out.push('      </note>');
+  }
+
+  function musicXmlDurationComponents(duration) {
+    let remaining = round(duration);
+    const values = [
+      { duration: 1152, type: 'whole', dots: 1 },
+      { duration: 768, type: 'whole', dots: 0 },
+      { duration: 576, type: 'half', dots: 1 },
+      { duration: 384, type: 'half', dots: 0 },
+      { duration: 288, type: 'quarter', dots: 1 },
+      { duration: 192, type: 'quarter', dots: 0 },
+      { duration: 144, type: 'eighth', dots: 1 },
+      { duration: 96, type: 'eighth', dots: 0 },
+      { duration: 72, type: '16th', dots: 1 },
+      { duration: 48, type: '16th', dots: 0 },
+      { duration: 36, type: '32nd', dots: 1 },
+      { duration: 24, type: '32nd', dots: 0 },
+      { duration: 18, type: '64th', dots: 1 },
+      { duration: 12, type: '64th', dots: 0 },
+      { duration: 6, type: '128th', dots: 0 },
+      { duration: 3, type: '256th', dots: 0 },
+      { duration: 1, type: '256th', dots: 0 }
+    ];
+    const out = [];
+    while (remaining > 0) {
+      const value = values.find((candidate) => candidate.duration <= remaining) || values[values.length - 1];
+      out.push(value);
+      remaining -= value.duration;
+    }
+    return out;
+  }
+
+  function writeMusicXmlDirection(out, words) {
+    if (!words) return;
+    out.push('      <direction placement="above">');
+    out.push(`        <direction-type><words>${escapeXml(words)}</words></direction-type>`);
+    out.push('      </direction>');
+  }
+
+  function writeMusicXmlDynamics(out, mark) {
+    out.push('      <direction placement="below">');
+    out.push(`        <direction-type><dynamics><${mark}/></dynamics></direction-type>`);
+    out.push('      </direction>');
+  }
+
+  function musicXmlTimelineWords(event) {
+    if (event.kind === 'programChange') return event.instrumentName ? `program ${event.program + 1} ${event.instrumentName}` : `program ${event.program + 1}`;
+    if (event.kind === 'drumInstrument') return `drum ${event.drumCode}`;
+    if (event.kind === 'controlChange') return `ctrl ${event.controller},${event.value}`;
+    if (event.kind === 'pitchBend') return `pitch ${event.value14}`;
+    if (event.kind === 'sysex') return `sysex ${event.data.join(',')}`;
+    return '';
+  }
+
+  function musicXmlHarmony(notation) {
+    if (!notation || !notation.chordSource) return '';
+    const parsed = parseChordSource(notation);
+    if (!parsed) return `      <direction placement="above"><direction-type><words>${escapeXml(notation.chordSource)}</words></direction-type></direction>`;
+    const kind = musicXmlChordKind(parsed.type);
+    const alter = parsed.alter ? `          <root-alter>${parsed.alter}</root-alter>\n` : '';
+    return [
+      '      <harmony>',
+      '        <root>',
+      `          <root-step>${parsed.step}</root-step>`,
+      alter.trimEnd(),
+      '        </root>',
+      `        <kind text="${escapeXml(parsed.type || 'maj')}">${kind}</kind>`,
+      '      </harmony>'
+    ].filter(Boolean).join('\n');
+  }
+
+  function parseChordSource(notation) {
+    let text = notation.chordSource.replace(/^\[/, '').replace(/\]$/, '');
+    text = text.replace(/^g:/i, '');
+    const match = text.match(/^([A-Ga-g])([#\+]|b|-|B)?(.*)$/);
+    if (!match) return null;
+    const accidental = match[2] || '';
+    return {
+      step: match[1].toUpperCase(),
+      alter: accidental === '#' || accidental === '+' ? 1 : (accidental === 'b' || accidental === '-' || accidental === 'B' ? -1 : 0),
+      type: (notation.chordType || match[3] || 'maj').replace(/:.*/, '') || 'maj'
+    };
+  }
+
+  function musicXmlChordKind(type) {
+    const normalized = String(type || 'maj').toLowerCase();
+    if (normalized === 'maj' || normalized === 'major') return 'major';
+    if (normalized === 'min' || normalized === 'm' || normalized === 'minor') return 'minor';
+    if (normalized === '7') return 'dominant';
+    if (normalized === 'maj7') return 'major-seventh';
+    if (normalized === 'min7' || normalized === 'm7') return 'minor-seventh';
+    if (normalized === 'dim') return 'diminished';
+    if (normalized === 'aug') return 'augmented';
+    if (normalized.startsWith('sus')) return 'suspended-fourth';
+    return 'other';
+  }
+
+  function musicXmlPitch(midiPitch, spelling) {
+    const spelled = spelling && spelling.match(/^([A-G])([#\+]|B|b|-)?/i);
+    if (spelled) {
+      const step = spelled[1].toUpperCase();
+      const accidental = spelled[2] || '';
+      return {
+        step,
+        alter: accidental === '#' || accidental === '+' ? 1 : (accidental === 'B' || accidental === 'b' || accidental === '-' ? -1 : 0),
+        octave: Math.floor(midiPitch / 12) - 1
+      };
+    }
+    const names = [
+      ['C', 0], ['C', 1], ['D', 0], ['D', 1], ['E', 0], ['F', 0],
+      ['F', 1], ['G', 0], ['G', 1], ['A', 0], ['A', 1], ['B', 0]
+    ];
+    const pair = names[((midiPitch % 12) + 12) % 12];
+    return { step: pair[0], alter: pair[1], octave: Math.floor(midiPitch / 12) - 1 };
+  }
+
+  function escapeXml(value) {
+    return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function irTrackToMidiTrack(track) {
+    const out = [];
+    let seqtime = 0;
+    let endTick = 0;
+
+    function pushDelta(tick) {
+      let delta = tick - seqtime;
+      if (delta < 0) delta = 0;
+      pushVarLen(out, delta);
+      seqtime += delta;
+    }
+
+    for (const event of track.events) {
+      if (event.kind === 'noteGroup') {
+        for (const note of event.emittedNotes) {
+          pushDelta(note.startTick);
+          pushBytes(out, 0x90 | note.channel, note.midiPitch, note.velocity);
+        }
+        for (const note of event.emittedNotes) {
+          pushDelta(note.endTick);
+          pushBytes(out, 0x80 | note.channel, note.midiPitch, 0);
+        }
+        endTick = Math.max(endTick, event.tick + event.durationTicks);
+      } else if (event.kind === 'rest') {
+        endTick = Math.max(endTick, event.tick + event.durationTicks);
+      } else if (event.kind === 'controlChange') {
+        pushDelta(event.tick);
+        pushBytes(out, 0xB0 | event.channel, event.controller, event.value);
+      } else if (event.kind === 'pitchBend') {
+        pushDelta(event.tick);
+        pushBytes(out, 0xE0 | event.channel, event.value14 & 0x7F, (event.value14 >> 7) & 0x7F);
+      } else if (event.kind === 'sysex') {
+        pushDelta(event.tick);
+        pushBytes(out, 240);
+        pushVarLen(out, event.data.length);
+        for (const value of event.data) pushBytes(out, value);
+        pushBytes(out, 247);
+      } else if (event.kind === 'programChange') {
+        pushDelta(event.tick);
+        pushBytes(out, 0xC0 | event.channel, event.program);
+      } else if (event.kind === 'drumInstrument') {
+        // Selecting a Musicpad drum instrument changes later note state only.
+      } else {
+        throw new Error(`Musicpad error: unsupported IR event ${event.kind}`);
+      }
+    }
+
+    pushDelta(endTick);
+    pushBytes(out, 0xFF, 0x2F, 0);
+    return out;
+  }
+
+  function midiBytesFromTracks(ppqn, tempo, mtracks) {
+    const pretrack = [];
+    pushAscii(pretrack, 'MThd');
+    pushUint32(pretrack, 6);
+    pushUint16(pretrack, 1);
+    pushUint16(pretrack, mtracks.length);
+    pushUint16(pretrack, ppqn);
+
+    let wholetrack = [...pretrack];
+    const tempoMicros = 1000000 * 60 / tempo;
+    let pretrackOutput = false;
+    const meta = [];
+    pushBytes(meta, 0, 0xFF, 1, VERSION.length);
+    pushAscii(meta, VERSION);
+    pushBytes(meta, 0, 0xFF, 0x51, 3, (tempoMicros >> 16) & 0xFF, (tempoMicros >> 8) & 0xFF, tempoMicros & 0xFF);
+
+    for (const mtrack of mtracks) {
+      if (!pretrackOutput) {
+        const first = meta.concat(mtrack);
+        pushAscii(wholetrack, 'MTrk');
+        pushUint32(wholetrack, first.length);
+        wholetrack = wholetrack.concat(first);
+        pretrackOutput = true;
+      } else {
+        pushAscii(wholetrack, 'MTrk');
+        pushUint32(wholetrack, mtrack.length);
+        wholetrack = wholetrack.concat(mtrack);
+      }
+    }
+    return new Uint8Array(wholetrack);
+  }
+
   function pushBytes(out, ...bytes) {
     for (const byte of bytes) out.push(Math.trunc(byte) & 0xFF);
   }
@@ -2201,9 +3040,13 @@ CB 56 Cowbell
   }
 
   root.musicpadToMidi = musicpadToMidi;
+  root.musicpadToIr = musicpadToIr;
+  root.musicpadIrToMidi = musicpadIrToMidi;
+  root.musicpadToMusicXml = musicpadToMusicXml;
+  root.musicpadIrToMusicXml = musicpadIrToMusicXml;
   root.MusicpadEngine = MusicpadEngine;
 
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { musicpadToMidi, MusicpadEngine };
+    module.exports = { musicpadToMidi, musicpadToIr, musicpadIrToMidi, musicpadToMusicXml, musicpadIrToMusicXml, MusicpadEngine };
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this);

@@ -5,7 +5,8 @@ const assert = require('assert');
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
-const { musicpadToMidi } = require('../src/musicpad.js');
+const { musicpadToMidi, musicpadToIr, musicpadIrToMidi, musicpadToMusicXml } = require('../src/musicpad.js');
+const IR_FIXTURES = require('./fixtures/musicpad-ir-cases.js');
 
 const ROOT = path.resolve(__dirname, '..');
 const SONGS_DIR = path.join(ROOT, 'project-docs', 'songs');
@@ -26,6 +27,64 @@ const EXPECTED_SONGS = {
   'random fun.mpd': { bytes: 8253, sha256: 'c0d94ff25b3dfccaff68367e723e838fb74f9c6f389d942803be91180b33e7a6' },
   'Starways to Heaven.mpd': { bytes: 822, sha256: '674ed740bd63e117e56f6e9f3965b2bd0c0f3c85f9b4a90fe65dc431776cf915' },
   'weird polyrythm.mpd': { bytes: 2596, sha256: 'a68dc5ccefc7ba14b3cc7058690d1ae4e17f542a6998183af856969153202f5e' }
+};
+
+const EXPECTED_FOCUSED_CASES = {
+  'numeric chord': {
+    source: 'tempo120 [0,4,7]/4',
+    bytes: 83,
+    sha256: '43e25e1dced52549140ce19b823fbf1e399c0b8fe934627ed189f060875be917'
+  },
+  'named keyboard chord': {
+    source: 'tempo120 [Amin]/4 [Cmaj7:2]/4',
+    bytes: 116,
+    sha256: 'f596a72ce6bae5025528f4eb597c606c33b7843cf00946577a56f1b42c5b1a0f'
+  },
+  'guitar fret chord': {
+    source: 'tempo120 [g:-,0,2,2,2,0]/4',
+    bytes: 99,
+    sha256: '63fdd40b3fa380e9a5f104978c698f362c81412c4647df1df9ff236919a4aa77'
+  },
+  'named guitar chord': {
+    source: 'tempo120 [g:Amaj]/4 [g:Emin]/4',
+    bytes: 156,
+    sha256: '82a38be3d6ef619c55a5d6044fe8ec57af0cd910696004c4ad805ada3d913a4f'
+  },
+  'strummed guitar chord': {
+    source: 'tempo120 strum10,300,80 [g:Amaj]/8 [g:Amaj]/8',
+    bytes: 154,
+    sha256: 'bc6baa2ee67e29860f9526d0832c645ca129a5f273b07fe4bc7f8dcb583bf641'
+  },
+  'stress and soft': {
+    source: 'tempo120 stress50 soft25 v80 \'c ,d e',
+    bytes: 85,
+    sha256: '1df71ddf9f6cdf6c7c88785d154eba7ba2d869f6af7016f57ebcef4fb20ff8ce'
+  },
+  'rests and holds': {
+    source: 'tempo120 c/8 = - d/4 p e/8',
+    bytes: 85,
+    sha256: '62d83067880946fe27508fc891fdb89b59c2211f324f0df7844a4a9d8517665a'
+  },
+  'macros and repeats': {
+    source: 'tempo120 m$riff(c e g) $riff*2 (a b)*2',
+    bytes: 148,
+    sha256: '5067a323b99f9b67f9ba3286b1d324f4fa74cf3bbde4267ff796a73e8dc7db5d'
+  },
+  'pitch and controller': {
+    source: 'tempo120 ch2 ctrl7,100 pitch+50 c pitch-25 d pitch0 e',
+    bytes: 101,
+    sha256: 'd628701c2775100221c811948dabe2c30bc0c3cefbed72b9df5c33812d5326c0'
+  },
+  'drum and pitch events': {
+    source: 'tempo120 iBD x/8 iSD x/8 pitch0',
+    bytes: 95,
+    sha256: '22410cea5771d2498ca3b02c602fb7a643dfabd7d87eec38f50a6159dd8f4e7c'
+  },
+  'program and drum instrument changes': {
+    source: 'tempo120 ch3 i25 c iBD 8',
+    bytes: 78,
+    sha256: 'ef8e8acb1c60a6ffb09283ccd60ea36a3dfc0cea3170dd2539d0fed1d38dc355'
+  }
 };
 
 function sha256(bytes) {
@@ -63,6 +122,35 @@ function assertValidMidi(bytes, label) {
   assert.strictEqual(offset, bytes.length, `${label}: MIDI chunk lengths do not add up`);
 }
 
+function seededRng(seed) {
+  let state = seed >>> 0;
+  return () => {
+    state = (1664525 * state + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
+
+function assertDeepIncludes(actual, expected, label) {
+  if (Array.isArray(expected)) {
+    assert(Array.isArray(actual), `${label}: expected an array`);
+    assert.strictEqual(actual.length, expected.length, `${label}: array length changed`);
+    for (let i = 0; i < expected.length; i += 1) {
+      assertDeepIncludes(actual[i], expected[i], `${label}[${i}]`);
+    }
+    return;
+  }
+
+  if (expected && typeof expected === 'object') {
+    assert(actual && typeof actual === 'object', `${label}: expected an object`);
+    for (const key of Object.keys(expected)) {
+      assertDeepIncludes(actual[key], expected[key], `${label}.${key}`);
+    }
+    return;
+  }
+
+  assert.strictEqual(actual, expected, `${label}: value changed`);
+}
+
 function testTrackSplitting() {
   const implicit = musicpadToMidi('A | B', { rng: () => 0.5 });
   const explicit = musicpadToMidi('|0 A | B', { rng: () => 0.5 });
@@ -84,19 +172,196 @@ function testInlineExamples() {
   }
 }
 
+function testFocusedRegressionCases() {
+  for (const [label, expected] of Object.entries(EXPECTED_FOCUSED_CASES)) {
+    const midi = musicpadToMidi(expected.source, { rng: () => 0.5 });
+    assertValidMidi(midi, label);
+    assert.strictEqual(midi.length, expected.bytes, `${label}: byte length changed`);
+    assert.strictEqual(sha256(midi), expected.sha256, `${label}: MIDI hash changed`);
+  }
+}
+
+function countMatches(value, pattern) {
+  const matches = value.match(pattern);
+  return matches ? matches.length : 0;
+}
+
+function musicXmlPartBodies(xml) {
+  return [...xml.matchAll(/<part id="[^"]+">([\s\S]*?)<\/part>/g)].map((match) => match[1]);
+}
+
+function musicXmlMeasureBodies(xml) {
+  return [...xml.matchAll(/<measure number="\d+">([\s\S]*?)<\/measure>/g)].map((match) => match[1]);
+}
+
+function musicXmlPartMeasureCounts(xml) {
+  return musicXmlPartBodies(xml).map((part) => countMatches(part, /<measure number="/g));
+}
+
+function musicXmlPartMeasures(xml) {
+  return new Map(musicXmlPartBodies(xml).map((part, index) => {
+    const measures = new Map([...part.matchAll(/<measure number="(\d+)">([\s\S]*?)<\/measure>/g)].map((match) => [Number(match[1]), match[2]]));
+    return [`P${index + 1}`, measures];
+  }));
+}
+
+function musicXmlMeasureDuration(body) {
+  let total = 0;
+  const notes = [...body.matchAll(/<note>([\s\S]*?)<\/note>/g)];
+  for (const note of notes) {
+    if (note[1].includes('<chord/>')) continue;
+    const duration = note[1].match(/<duration>(\d+)<\/duration>/);
+    if (duration) total += Number(duration[1]);
+  }
+  return total;
+}
+
+function musicXmlMeasureDurations(xml) {
+  return musicXmlMeasureBodies(xml).map((body) => {
+    return musicXmlMeasureDuration(body);
+  });
+}
+
+function testMusicXmlExport() {
+  const simple = musicpadToMusicXml('tempo120 c/4 - d/4', { rng: () => 0.5 });
+  assert(simple.startsWith('<?xml version="1.0" encoding="UTF-8"?>'), 'MusicXML: missing XML declaration');
+  assert(simple.includes('<score-partwise version="3.1">'), 'MusicXML: missing score-partwise root');
+  assert(simple.includes('<divisions>192</divisions>'), 'MusicXML: missing divisions');
+  assert(simple.includes('<time><beats>4</beats><beat-type>4</beat-type></time>'), 'MusicXML: missing default time signature');
+  assert(simple.includes('<step>C</step>'), 'MusicXML: missing C note');
+  assert(simple.includes('<rest/>'), 'MusicXML: missing rest');
+
+  const tied = musicpadToMusicXml('tempo120 c/1=', { rng: () => 0.5 });
+  assert(countMatches(tied, /<measure number="/g) >= 2, 'MusicXML: tied long note should span measures');
+  assert(tied.includes('<tie type="start"/>'), 'MusicXML: missing tie start');
+  assert(tied.includes('<tie type="stop"/>'), 'MusicXML: missing tie stop');
+  assert(tied.includes('<tied type="start"/>'), 'MusicXML: missing tied notation start');
+  assert(tied.includes('<tied type="stop"/>'), 'MusicXML: missing tied notation stop');
+
+  const chord = musicpadToMusicXml('tempo120 [Amin]/4', { rng: () => 0.5 });
+  assert(chord.includes('<harmony>'), 'MusicXML: missing harmony for named chord');
+  assert(chord.includes('<root-step>A</root-step>'), 'MusicXML: missing harmony root');
+  assert(chord.includes('<kind text="min">minor</kind>'), 'MusicXML: missing minor harmony kind');
+  assert(countMatches(chord, /<chord\/>/g) >= 2, 'MusicXML: missing chord note markers');
+
+  const strum = musicpadToMusicXml('tempo120 strum10,300,80 [g:Amaj]/8', { rng: () => 0.5 });
+  assert(strum.includes('<root-step>A</root-step>'), 'MusicXML: missing guitar chord harmony root');
+  assert(strum.includes('strum down'), 'MusicXML: missing strum direction text');
+  assert(strum.includes('<arpeggiate/>'), 'MusicXML: missing arpeggiate notation');
+
+  const expressive = musicpadToMusicXml("tempo120 stress50 soft25 'c ,d ctrl7,100 pitch+50 sysex", { rng: () => 0.5 });
+  assert(expressive.includes('<dynamics><f/></dynamics>'), 'MusicXML: missing stress dynamic');
+  assert(expressive.includes('<dynamics><p/></dynamics>'), 'MusicXML: missing soft dynamic');
+  assert(expressive.includes('<words>ctrl 7,100</words>'), 'MusicXML: missing controller direction');
+  assert(expressive.includes('<words>pitch 12288</words>'), 'MusicXML: missing pitch direction');
+  assert(expressive.includes('<words>sysex </words>'), 'MusicXML: missing sysex direction');
+
+  const mergedRests = musicpadToMusicXml('tempo120 c/4 - - d/4', { rng: () => 0.5 });
+  const firstMeasure = musicXmlMeasureBodies(mergedRests)[0];
+  assert.strictEqual(countMatches(firstMeasure, /<rest\/>/g), 1, 'MusicXML: adjacent rests should be merged within a measure');
+  assert(firstMeasure.includes('<duration>384</duration>'), 'MusicXML: merged rest should preserve combined duration');
+
+  const exactMeasures = musicpadToMusicXml('tempo120 c/4 d/4 e/4 f/4 g/4', { rng: () => 0.5 });
+  assert.deepStrictEqual(musicXmlMeasureDurations(exactMeasures), [768, 768], 'MusicXML: measures should be exactly filled');
+
+  const tiedMeasures = musicpadToMusicXml('tempo120 c/1=', { rng: () => 0.5 });
+  assert.deepStrictEqual(musicXmlMeasureDurations(tiedMeasures), [768, 768], 'MusicXML: tied notes should split at bar boundaries');
+
+  const parts = musicpadToMusicXml('c | e', { rng: () => 0.5 });
+  assert(parts.includes('<score-part id="P1">'), 'MusicXML: missing first part');
+  assert(parts.includes('<score-part id="P2">'), 'MusicXML: missing second part');
+
+  const paddedParts = musicpadToMusicXml('c/1 c/1 | e/4', { rng: () => 0.5 });
+  assert.deepStrictEqual(musicXmlPartMeasureCounts(paddedParts), [2, 2], 'MusicXML: shorter parts should be padded to the global measure count');
+}
+
+function testMusicXmlStarwaysMeasures() {
+  const source = fs.readFileSync(path.join(SONGS_DIR, 'Starways to Heaven.mpd'), 'utf8');
+  const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
+  const measures = musicXmlPartMeasures(xml);
+  const complained = {
+    P1: [3, 7],
+    P2: [1, 2, 5, 6],
+    P3: [1, 2, 3, 5, 6, 7]
+  };
+
+  for (const [partId, measureNumbers] of Object.entries(complained)) {
+    for (const measureNumber of measureNumbers) {
+      const body = measures.get(partId).get(measureNumber);
+      assert.strictEqual(musicXmlMeasureDuration(body), 768, `Starways ${partId} measure ${measureNumber}: duration is not 4/4`);
+      for (const note of body.matchAll(/<note>([\s\S]*?)<\/note>/g)) {
+        assert(note[1].includes('<type>'), `Starways ${partId} measure ${measureNumber}: note/rest missing type`);
+      }
+    }
+  }
+}
+
+function testMusicXmlSongsHaveFilledMeasures() {
+  for (const name of Object.keys(EXPECTED_SONGS).sort()) {
+    const source = fs.readFileSync(path.join(SONGS_DIR, name), 'utf8');
+    const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
+    const measureCounts = musicXmlPartMeasureCounts(xml);
+    assert(measureCounts.every((count) => count === measureCounts[0]), `${name}: MusicXML parts have different measure counts`);
+    for (const [index, duration] of musicXmlMeasureDurations(xml).entries()) {
+      assert.strictEqual(duration, 768, `${name}: MusicXML measure ${index + 1} duration is not 4/4`);
+    }
+  }
+}
+
 function testSongs() {
   for (const [name, expected] of Object.entries(EXPECTED_SONGS).sort()) {
     const source = fs.readFileSync(path.join(SONGS_DIR, name), 'utf8');
     const midi = musicpadToMidi(source, { rng: () => 0.5 });
+    const irMidi = musicpadIrToMidi(musicpadToIr(source, { rng: () => 0.5 }));
     assertValidMidi(midi, name);
     assert.strictEqual(midi.length, expected.bytes, `${name}: byte length changed`);
     assert.strictEqual(sha256(midi), expected.sha256, `${name}: MIDI hash changed`);
+    assert.deepStrictEqual(Buffer.from(irMidi), Buffer.from(midi), `${name}: IR MIDI differs from direct MIDI`);
+  }
+}
+
+function testIrFixtures() {
+  for (const fixture of IR_FIXTURES.cases) {
+    const ir = musicpadToIr(fixture.source, { rng: () => 0.5 });
+    assertDeepIncludes(ir, fixture.expected, fixture.name);
+  }
+}
+
+function testMidiFromIrFixtures() {
+  for (const fixture of IR_FIXTURES.cases) {
+    const directMidi = musicpadToMidi(fixture.source, { rng: () => 0.5 });
+    const ir = musicpadToIr(fixture.source, { rng: () => 0.5 });
+    const irMidi = musicpadIrToMidi(ir);
+    assert.deepStrictEqual(Buffer.from(irMidi), Buffer.from(directMidi), `${fixture.name}: IR MIDI differs from direct MIDI`);
+  }
+}
+
+function testMidiFromIrHumanization() {
+  const examples = [
+    'tempo120 loose10,1 c d e f',
+    'tempo120 velvar20,1 c d e f',
+    'tempo120 loose10,1 velvar20,1 strum10,300,80 [g:Amaj]/8 [g:Amaj]/8',
+    'tempo120 globaloose10,1 globalvelvar20,1 c d e f'
+  ];
+
+  for (const source of examples) {
+    const directMidi = musicpadToMidi(source, { rng: seededRng(123) });
+    const ir = musicpadToIr(source, { rng: seededRng(123) });
+    const irMidi = musicpadIrToMidi(ir);
+    assert.deepStrictEqual(Buffer.from(irMidi), Buffer.from(directMidi), `${source}: humanized IR MIDI differs from direct MIDI`);
   }
 }
 
 function main() {
   testTrackSplitting();
   testInlineExamples();
+  testFocusedRegressionCases();
+  testIrFixtures();
+  testMidiFromIrFixtures();
+  testMidiFromIrHumanization();
+  testMusicXmlExport();
+  testMusicXmlStarwaysMeasures();
+  testMusicXmlSongsHaveFilledMeasures();
   testSongs();
   console.log('musicpad tests passed');
 }

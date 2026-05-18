@@ -44,22 +44,39 @@ Build and verify the UI as separate files first. Final single-file HTML packagin
 - [x] Extract bundled song lists into `src/songlist.js`
 - [x] Ignore generated `src/musicpad.html`
 
-### M5: MusicXML Export
-Goal: export the interpreted Musicpad piece as score-oriented MusicXML, using the same played events/timelines that MIDI playback uses.
-- [ ] Define a minimal intermediate event model for interpreted tracks: notes, rests/gaps, chords, timing, channel, instrument, velocity where useful.
-- [ ] Refactor MIDI generation in small steps so `musicpadToMidi(source)` remains unchanged but structured events can also be collected/reused.
-- [ ] Add tests proving the event model preserves current MIDI output for representative examples, including implicit track splitting (`A | B` = `|0 A | B`).
-- [ ] Implement first MusicXML writer: one Musicpad track per MusicXML part; default 4/4 measure grid; divisions derived from PPQN; notes, rests, chords, ties as needed.
-- [ ] Add `Download → MusicXML (.musicxml)` to the UI template and rebuild flow.
-- [ ] Verify with automated XML structure tests and at least one external score-rendering smoke test if available.
+### M5: Rich Intermediate Representation, then MusicXML
+Goal: refactor Musicpad so parsing/interpreting produces a rich internal representation that can generate the current MIDI output first, then MusicXML later. MusicXML must represent the score as Musicpad intends it, not a lossy reconstruction from MIDI bytes.
+
+#### Phase 1 — Baseline and invariants
+- [x] Capture current MIDI behavior with regression tests before refactoring.
+- [x] Add focused tests for track splitting, chords, guitar chords, strum, dynamics/stress/soft, rests/holds, macros/repeats, pitch/controller events.
+- [x] Keep `musicpadToMidi(source, options)` public API and output stable unless a specific bug fix is approved.
+
+#### Phase 2 — IR design
+- [x] Define IR shape in code-adjacent comments/tests before broad implementation.
+- [x] IR must preserve performance data: track index, absolute ticks, duration, note MIDI pitches, channel, program, velocity, controller/pitch events.
+- [x] IR must preserve notation intent where available: original command token, note spelling, chord source (`[Amin]`, `[g:Am]`, `[0,4,7]`), guitar chord/frets, strum settings/direction, stress/soft/accent, explicit holds/rests.
+- [x] IR must represent grouped score events separately from emitted MIDI note-ons so strummed chords can remain notated as chords/arpeggios.
+
+#### Phase 3 — MIDI from IR
+- [x] Convert existing direct MIDI emission into IR emission plus a MIDI writer, in small reversible steps.
+- [x] After each step run `node tests/musicpad.test.js` and compare representative MIDI hashes/lengths.
+- [x] Keep random/humanization deterministic under injected `rng`.
+
+#### Phase 4 — MusicXML from IR
+- [x] Implement MusicXML only after MIDI-from-IR is stable.
+- [x] MusicXML writer should prioritize printable score: parts, measures, rests, ties, chords, arpeggios/strum marks, approximate dynamics/articulations, and useful text directions for playback-only events.
+- [x] Add `Download → MusicXML (.musicxml)` only after automated XML tests pass.
+- [ ] Verify with external score rendering (MuseScore or equivalent) when available.
 
 ## Risks
 - **Variable-length MIDI encoding**: must match Perl `pack 'w'` exactly.
 - **Chord parsing edge cases**: the Perl regex logic is intricate; need careful testing.
 - **In-browser playback quality**: playback depends on the small Web Audio SoundFont synth and browser behavior.
 - **Generated artifact drift**: `src/musicpad.html` is ignored; run `src/build` after source changes before manual testing or distribution.
-- **MusicXML mismatch risk**: Musicpad is playback-oriented while MusicXML is score-oriented; use a shared interpreted event model to prevent MIDI and MusicXML divergence.
-- **Notation layout choices**: Musicpad has no required barlines/time signatures; first MusicXML export will need explicit defaults and may prioritize faithful timing over polished engraving.
+- **MusicXML mismatch risk**: Musicpad is playback-oriented while MusicXML is score-oriented; preserve both performance data and notation intent in the IR.
+- **Semantic loss risk**: A MIDI-like event list loses `[g:Am]`, strum, note spelling, explicit dynamics, and other score intent; do not build MusicXML from MIDI bytes or note-ons alone.
+- **Notation layout choices**: Musicpad has no required barlines/time signatures; MusicXML export will need explicit defaults and may require later user-facing options.
 
 ## Decision Log
 - 2026-05-12: Port 1:1 from Perl, preserving all notation features
@@ -69,6 +86,8 @@ Goal: export the interpreted Musicpad piece as score-oriented MusicXML, using th
 - 2026-05-17: Reintroduced optional browser playback using embedded `A320U.sf2`.
 - 2026-05-17: Treat `src/musicpad.html` as generated; build from `src/musicpad-html.html`, `src/musicpad.js`, `src/songlist.js`, and `src/A320U.sf2` with `src/build`.
 - 2026-05-17: Plan MusicXML around a reusable interpreted event model rather than a separate parser, so exports represent what Musicpad plays.
+- 2026-05-17: Discarded a first MusicXML attempt because it was too MIDI-like and lost notation intent such as guitar chord identity, strum, and explicit dynamics.
+- 2026-05-17: New M5 order is IR first, MIDI-from-IR second, MusicXML third.
 
 ## Next Step
-Start M5 by designing the minimal interpreted event model and identifying the smallest engine refactor that exposes it without changing `musicpadToMidi(source)` output. Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.
+Verify MusicXML with an external score renderer (MuseScore or equivalent) when available, then decide whether to polish notation defaults before committing. Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.

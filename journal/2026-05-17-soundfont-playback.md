@@ -37,3 +37,8 @@
 - Refactor: extracted Tutorial and Reference page markup from `src/musicpad-html.html` into `src/musicpad-docs.html`; `src/build` now inlines it at `MUSICPAD_DOCS`.
 - Verification: `bash -n src/build`, ran `src/build`, generated HTML contains tutorial/reference/song-list pages, inline JavaScript parses, and `node tests/musicpad.test.js` passes.
 - Planning: added M5 MusicXML Export to `PLAN.md`. The plan starts with a minimal interpreted event model, then a small MIDI-preserving refactor, then a MusicXML writer and Download menu item.
+- Planning reset: agreed MusicXML should wait until a rich internal representation exists. The previous MusicXML attempt was reverted because it reconstructed from MIDI-like events and lost score intent.
+- New M5 strategy recorded in `PLAN.md` and `STATE.md`: Phase 1 baseline tests, Phase 2 IR design preserving performance + notation intent, Phase 3 MIDI writer from IR with stable output, Phase 4 MusicXML writer from IR.
+- Important IR requirements: preserve track/ticks/duration/pitches/channel/program/velocity plus original command token, note spelling, chord source (`[Amin]`, `[g:Am]`, `[0,4,7]`), guitar chord/frets, strum settings/direction, stress/soft/accent, explicit holds/rests, and controller/pitch events.
+- Checkpoint: M5 planning is complete and no MusicXML implementation remains in the worktree. Next session should start with Phase 1 baseline regression tests before touching parser/engine internals.
+- Current tracked changes are planning/session files only: `PLAN.md`, `STATE.md`, and this journal. Untracked `old/` and `xxx/` remain untouched.
