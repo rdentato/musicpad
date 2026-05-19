@@ -122,6 +122,11 @@ function assertValidMidi(bytes, label) {
   assert.strictEqual(offset, bytes.length, `${label}: MIDI chunk lengths do not add up`);
 }
 
+function firstMidiTrackBody(bytes) {
+  const length = readUint32(bytes, 18);
+  return bytes.slice(22, 22 + length);
+}
+
 function seededRng(seed) {
   let state = seed >>> 0;
   return () => {
@@ -169,6 +174,62 @@ function testInlineExamples() {
   for (const source of examples) {
     const midi = musicpadToMidi(source, { rng: () => 0.5 });
     assertValidMidi(midi, source);
+  }
+}
+
+function testTitleCommand() {
+  const title = 'My Piece';
+  const source = `title"${title}" tempo120 c`;
+  const midi = musicpadToMidi(source, { rng: () => 0.5 });
+  const track = Buffer.from(firstMidiTrackBody(midi));
+  const expectedMeta = Buffer.from([0x00, 0xFF, 0x03, title.length, ...Buffer.from(title, 'ascii')]);
+  assert.deepStrictEqual(track.slice(0, expectedMeta.length), expectedMeta, 'title command should emit FF 03 at tick 0 of first MIDI track');
+
+  const ir = musicpadToIr(source, { rng: () => 0.5 });
+  assert.strictEqual(ir.title, title, 'title command should be preserved in IR');
+
+  const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
+  assert(xml.includes('<work-title>My Piece</work-title>'), 'title command should set MusicXML work title');
+}
+
+function testAuthorCommand() {
+  const author = 'Me and myself';
+  const source = `author"${author}" tempo120 c`;
+  const midi = musicpadToMidi(source, { rng: () => 0.5 });
+  const track = Buffer.from(firstMidiTrackBody(midi));
+  const expectedMeta = Buffer.from([0x00, 0xFF, 0x02, author.length, ...Buffer.from(author, 'ascii')]);
+  assert.deepStrictEqual(track.slice(0, expectedMeta.length), expectedMeta, 'author command should emit FF 02 copyright at tick 0 of first MIDI track');
+
+  const ir = musicpadToIr(source, { rng: () => 0.5 });
+  assert.strictEqual(ir.author, author, 'author command should be preserved in IR');
+
+  const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
+  assert(xml.includes('<creator type="composer">Me and myself</creator>'), 'author command should set MusicXML composer');
+}
+
+function testMeterAndKeyCommands() {
+  const source = 'meter"7/8" key"D# maj" tempo120 c/8 d/8 e/8 f/8 g/8 a/8 b/8 c/8';
+  const midi = musicpadToMidi(source, { rng: () => 0.5 });
+  const track = Buffer.from(firstMidiTrackBody(midi));
+  assert(track.indexOf(Buffer.from([0x00, 0xFF, 0x58, 0x04, 0x07, 0x03, 0x18, 0x08])) !== -1, 'meter command should emit MIDI time signature');
+  assert(track.indexOf(Buffer.from([0x00, 0xFF, 0x59, 0x02, 0x09, 0x00])) !== -1, 'key command should emit MIDI key signature');
+
+  const ir = musicpadToIr(source, { rng: () => 0.5 });
+  assert.deepStrictEqual(ir.tracks[0].events[0], { kind: 'timeSignature', sourceToken: 'meter"7/8"', tick: 0, beats: 7, beatType: 8 }, 'meter command should be preserved in IR');
+  assert.deepStrictEqual(ir.tracks[0].events[1], { kind: 'keySignature', sourceToken: 'key"D# maj"', tick: 0, root: 'D#', mode: 'major', fifths: 9 }, 'key command should be preserved in IR');
+
+  const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
+  assert(xml.includes('<time><beats>7</beats><beat-type>8</beat-type></time>'), 'meter command should set MusicXML time signature');
+  assert(xml.includes('<key><fifths>9</fifths><mode>major</mode></key>'), 'key command should set MusicXML key signature');
+  assert.deepStrictEqual(musicXmlMeasureDurations(xml), [672, 672], 'MusicXML 7/8 measures should be filled');
+
+  for (const spelling of ['C major', 'C maj']) {
+    const aliasXml = musicpadToMusicXml(`key"${spelling}" c`, { rng: () => 0.5 });
+    assert(aliasXml.includes('<mode>major</mode>'), `${spelling}: should be accepted as major`);
+  }
+  for (const spelling of ['A minor', 'A min']) {
+    const aliasXml = musicpadToMusicXml(`key"${spelling}" c`, { rng: () => 0.5 });
+    assert(aliasXml.includes('<mode>minor</mode>'), `${spelling}: should be accepted as minor`);
   }
 }
 
@@ -252,9 +313,9 @@ function testMusicXmlExport() {
   const expressive = musicpadToMusicXml("tempo120 stress50 soft25 'c ,d ctrl7,100 pitch+50 sysex", { rng: () => 0.5 });
   assert(expressive.includes('<dynamics><f/></dynamics>'), 'MusicXML: missing stress dynamic');
   assert(expressive.includes('<dynamics><p/></dynamics>'), 'MusicXML: missing soft dynamic');
-  assert(expressive.includes('<words>ctrl 7,100</words>'), 'MusicXML: missing controller direction');
-  assert(expressive.includes('<words>pitch 12288</words>'), 'MusicXML: missing pitch direction');
-  assert(expressive.includes('<words>sysex </words>'), 'MusicXML: missing sysex direction');
+  assert(!expressive.includes('<words>ctrl'), 'MusicXML: controller events should not be visible text');
+  assert(!expressive.includes('<words>pitch'), 'MusicXML: pitch events should not be visible text');
+  assert(!expressive.includes('<words>sysex'), 'MusicXML: sysex events should not be visible text');
 
   const mergedRests = musicpadToMusicXml('tempo120 c/4 - - d/4', { rng: () => 0.5 });
   const firstMeasure = musicXmlMeasureBodies(mergedRests)[0];
@@ -355,6 +416,9 @@ function testMidiFromIrHumanization() {
 function main() {
   testTrackSplitting();
   testInlineExamples();
+  testTitleCommand();
+  testAuthorCommand();
+  testMeterAndKeyCommands();
   testFocusedRegressionCases();
   testIrFixtures();
   testMidiFromIrFixtures();

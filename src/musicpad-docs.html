@@ -307,6 +307,10 @@ $riff $riff*3</pre>
             <tr><th>Command</th><th>Meaning</th></tr>
             <tr><td><code>tempoN</code></td><td>Quarter notes per minute. Default 60.</td></tr>
             <tr><td><code>resolutionN</code></td><td>0=96, 1=192, 2=384, 3=1536 PPQN. Default 192.</td></tr>
+            <tr><td><code>title"Text"</code></td><td>Song title. Used as the MIDI track name and MusicXML work title.</td></tr>
+            <tr><td><code>author"Text"</code></td><td>Song author/composer. Used as a MIDI copyright event and MusicXML composer.</td></tr>
+            <tr><td><code>meter"N/D"</code></td><td>Meter from this point onward, such as <code>meter"7/8"</code>. Used as a MIDI time-signature event and MusicXML time signature.</td></tr>
+            <tr><td><code>key"Root mode"</code></td><td>Key from this point onward, such as <code>key"D# maj"</code>. Modes accept <code>maj</code>, <code>major</code>, <code>min</code>, and <code>minor</code>.</td></tr>
             <tr><td><code>dutyN</code></td><td>Default duty percent.</td></tr>
             <tr><td><code>velocityN</code></td><td>Default velocity.</td></tr>
             <tr><td><code>stressN</code>, <code>softN</code></td><td>Track settings for stressed/soft notes.</td></tr>
@@ -314,6 +318,14 @@ $riff $riff*3</pre>
             <tr><td><code>velvarW,Q</code>, <code>globalvelvarW,Q</code></td><td>Velocity humanization: ±W percent.</td></tr>
             <tr><td><code>dEbUg</code>, <code>dEbUgMaX</code></td><td>Original debug commands; case-sensitive.</td></tr>
           </table>
+          <h3>Meter and key examples</h3>
+          <p>Use quoted values because meter and key can contain symbols or spaces. The command affects the current track from that point onward. Put it near the start of every track that should show the same notation in MusicXML.</p>
+          <pre>meter"7/8"
+key"D# maj"
+c/8 d/8 e/8 f/8 g/8 a/8 b/8</pre>
+          <p>Key modes accept either short or long names: <code>maj</code> or <code>major</code>, and <code>min</code> or <code>minor</code>.</p>
+          <pre>key"C major"
+key"A min"</pre>
         </section>
 
         <section id="drums">

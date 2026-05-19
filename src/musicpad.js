@@ -1211,7 +1211,7 @@ CB 56 Cowbell
 
   function musicpadIrToMidi(ir) {
     const mtracks = ir.tracks.map(irTrackToMidiTrack);
-    return midiBytesFromTracks(ir.ppqn, ir.tempoBpm, mtracks);
+    return midiBytesFromTracks(ir.ppqn, ir.tempoBpm, mtracks, ir.title, ir.author);
   }
 
   function musicpadToMusicXml(source, options) {
@@ -1222,22 +1222,30 @@ CB 56 Cowbell
     const settings = options || {};
     const beats = valueOr(settings.beats, 4);
     const beatType = valueOr(settings.beatType, 4);
-    const measureTicks = ir.ppqn * beats * (4 / beatType);
     const parts = ir.tracks.map((track, index) => ({ id: `P${index + 1}`, track }));
-    let maxTick = measureTicks;
+    let maxTick = ir.ppqn * beats * (4 / beatType);
     for (const track of ir.tracks) {
       for (const event of track.events) {
         if (event.kind === 'noteGroup' || event.kind === 'rest') maxTick = Math.max(maxTick, event.tick + event.durationTicks);
         else maxTick = Math.max(maxTick, event.tick);
       }
     }
-    const measureCount = Math.max(1, Math.ceil(maxTick / measureTicks));
     const out = [
       '<?xml version="1.0" encoding="UTF-8"?>',
       '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">',
-      '<score-partwise version="3.1">',
-      '  <part-list>'
+      '<score-partwise version="3.1">'
     ];
+    if (ir.title) {
+      out.push('  <work>');
+      out.push(`    <work-title>${escapeXml(ir.title)}</work-title>`);
+      out.push('  </work>');
+    }
+    if (ir.author) {
+      out.push('  <identification>');
+      out.push(`    <creator type="composer">${escapeXml(ir.author)}</creator>`);
+      out.push('  </identification>');
+    }
+    out.push('  <part-list>');
 
     for (const part of parts) {
       out.push(`    <score-part id="${part.id}"><part-name>Track ${part.track.index}</part-name></score-part>`);
@@ -1246,7 +1254,7 @@ CB 56 Cowbell
 
     for (const part of parts) {
       out.push(`  <part id="${part.id}">`);
-      writeMusicXmlPart(out, part.track, ir.ppqn, beats, beatType, measureTicks, measureCount);
+      writeMusicXmlPart(out, part.track, ir.ppqn, beats, beatType, maxTick);
       out.push('  </part>');
     }
 
@@ -1276,6 +1284,8 @@ CB 56 Cowbell
       this.gvelvarw = 0;
       this.gvelvarq = 1;
       this.globalguitmode = 0;
+      this.title = '';
+      this.author = '';
       this.string = '';
       this.mtracks = [];
     }
@@ -1296,6 +1306,8 @@ CB 56 Cowbell
       }
 
       return {
+        title: this.title,
+        author: this.author,
         ppqn: this.ppqn,
         tempoBpm: this.tempo,
         tracks: irTracks
@@ -1329,6 +1341,14 @@ CB 56 Cowbell
       if (this.string.includes('dEbUg')) {
         this.debug = 1;
         this.string = this.string.replace('dEbUg', '');
+      }
+      if ((match = this.string.match(/\btitle"([^"]*)"/i))) {
+        this.title = match[1];
+        this.string = this.string.replace(/\btitle"([^"]*)"/i, '');
+      }
+      if ((match = this.string.match(/\bauthor"([^"]*)"/i))) {
+        this.author = match[1];
+        this.string = this.string.replace(/\bauthor"([^"]*)"/i, '');
       }
       if ((match = this.string.match(/tempo(\d+)/i))) {
         this.tempo = Number(match[1]);
@@ -1521,6 +1541,20 @@ CB 56 Cowbell
 
         if (command.length === 0) continue;
         const lower = command.toLowerCase();
+
+        if (lower.startsWith('meter')) {
+          const parsed = parseMeterCommand(command);
+          if (!parsed) this.error(`meter definition problem: I don't understand ${sourceToken}`);
+          events.push({ kind: 'timeSignature', sourceToken, tick: round(abstime), beats: parsed.beats, beatType: parsed.beatType });
+          continue;
+        }
+
+        if (lower.startsWith('key')) {
+          const parsed = parseKeyCommand(command);
+          if (!parsed) this.error(`key definition problem: I don't understand ${sourceToken}`);
+          events.push({ kind: 'keySignature', sourceToken, tick: round(abstime), root: parsed.root, mode: parsed.mode, fifths: parsed.fifths });
+          continue;
+        }
 
         if (lower.includes('tuning[') && (match = command.match(/tuning\[(.*)\]/i))) {
           const tuningcommand = match[1];
@@ -2378,7 +2412,7 @@ CB 56 Cowbell
     }
 
     postOut() {
-      return midiBytesFromTracks(this.ppqn, this.tempo, this.mtracks);
+      return midiBytesFromTracks(this.ppqn, this.tempo, this.mtracks, this.title, this.author);
     }
 
     getBound(stringa, startp, opendelim, closedelim) {
@@ -2436,6 +2470,37 @@ CB 56 Cowbell
     error(message) {
       throw new Error(`Musicpad error: ${message}`);
     }
+  }
+
+  function parseMeterCommand(command) {
+    const match = command.match(/^meter"(\d+)\/(\d+)"$/i);
+    if (!match) return null;
+    const beats = Number(match[1]);
+    const beatType = Number(match[2]);
+    if (!Number.isFinite(beats) || !Number.isFinite(beatType) || beats <= 0 || beatType <= 0) return null;
+    if (!Number.isInteger(midiBeatTypePower(beatType))) return null;
+    return { beats, beatType };
+  }
+
+  function parseKeyCommand(command) {
+    const match = command.match(/^key"\s*([A-Ga-g])([#\+bB-]?)\s*(maj(?:or)?|min(?:or)?)\s*"$/i);
+    if (!match) return null;
+    const letter = match[1].toUpperCase();
+    const accidental = match[2];
+    const mode = match[3].toLowerCase().startsWith('min') ? 'minor' : 'major';
+    const root = `${letter}${accidental}`.replace('+', '#').replace('-', 'b');
+    const majorFifths = { C: 0, G: 1, D: 2, A: 3, E: 4, B: 5, F: -1 }[letter] + keyAccidentalFifths(accidental);
+    return { root, mode, fifths: mode === 'minor' ? majorFifths - 3 : majorFifths };
+  }
+
+  function keyAccidentalFifths(accidental) {
+    if (accidental === '#' || accidental === '+') return 7;
+    if (accidental === 'b' || accidental === 'B' || accidental === '-') return -7;
+    return 0;
+  }
+
+  function midiBeatTypePower(beatType) {
+    return Math.log2(beatType);
   }
 
   function valueOr(value, fallback) {
@@ -2531,9 +2596,12 @@ CB 56 Cowbell
   function splitWhitespace(value) {
     const tokens = [];
     let tokenStart = -1;
+    let inQuote = false;
     for (let i = 0; i <= value.length; i += 1) {
-      const code = i < value.length ? value.charCodeAt(i) : 32;
-      const isSpace = code === 32 || code === 9 || code === 10 || code === 13 || code === 12;
+      const isEnd = i >= value.length;
+      const code = isEnd ? 32 : value.charCodeAt(i);
+      if (!isEnd && code === 34) inQuote = !inQuote;
+      const isSpace = isEnd || (!inQuote && (code === 32 || code === 9 || code === 10 || code === 13 || code === 12));
       if (isSpace) {
         if (tokenStart !== -1) {
           tokens.push(value.slice(tokenStart, i));
@@ -2658,7 +2726,8 @@ CB 56 Cowbell
     return chord;
   }
 
-  function writeMusicXmlPart(out, track, ppqn, beats, beatType, measureTicks, measureCount) {
+  function writeMusicXmlPart(out, track, ppqn, beats, beatType, maxTick) {
+    const measures = musicXmlMeasures(track, ppqn, beats, beatType, maxTick);
     const measureEvents = new Map();
 
     function addSegment(measureIndex, segment) {
@@ -2671,8 +2740,8 @@ CB 56 Cowbell
         const end = event.tick + event.durationTicks;
         let cursor = event.tick;
         while (cursor < end) {
-          const measureIndex = Math.floor(cursor / measureTicks);
-          const measureEnd = (measureIndex + 1) * measureTicks;
+          const measureIndex = musicXmlMeasureIndexForTick(measures, cursor);
+          const measureEnd = measures[measureIndex].endTick;
           const segmentEnd = Math.min(end, measureEnd);
           addSegment(measureIndex, {
             event,
@@ -2684,26 +2753,19 @@ CB 56 Cowbell
           cursor = segmentEnd;
         }
       } else {
-        addSegment(Math.floor(event.tick / measureTicks), { event, startTick: event.tick, durationTicks: 0 });
+        const measureIndex = musicXmlMeasureIndexForTick(measures, event.tick);
+        addSegment(measureIndex, { event, startTick: event.tick, durationTicks: 0 });
       }
     }
 
-    for (let measureIndex = 0; measureIndex < measureCount; measureIndex += 1) {
+    for (let measureIndex = 0; measureIndex < measures.length; measureIndex += 1) {
+      const measure = measures[measureIndex];
       out.push(`    <measure number="${measureIndex + 1}">`);
-      if (measureIndex === 0) {
-        out.push('      <attributes>');
-        out.push(`        <divisions>${ppqn}</divisions>`);
-        out.push('        <key><fifths>0</fifths></key>');
-        out.push(`        <time><beats>${beats}</beats><beat-type>${beatType}</beat-type></time>`);
-        out.push('        <clef><sign>G</sign><line>2</line></clef>');
-        out.push('      </attributes>');
-      }
+      if (measure.attributes) writeMusicXmlAttributes(out, ppqn, measure);
 
       const segments = (measureEvents.get(measureIndex) || []).sort((a, b) => a.startTick - b.startTick);
       const items = [];
-      const measureStart = round(measureIndex * measureTicks);
-      const measureEnd = round((measureIndex + 1) * measureTicks);
-      let cursor = measureStart;
+      let cursor = measure.startTick;
       for (const segment of segments) {
         if (segment.event.kind !== 'noteGroup' && segment.event.kind !== 'rest') {
           items.push({ kind: 'segment', segment });
@@ -2723,13 +2785,60 @@ CB 56 Cowbell
         }
         cursor = Math.max(cursor, segmentEnd);
       }
-      if (cursor < measureEnd) appendMusicXmlRestItem(items, measureEnd - cursor);
+      if (cursor < measure.endTick) appendMusicXmlRestItem(items, measure.endTick - cursor);
       for (const item of items) {
         if (item.kind === 'rest') writeMusicXmlRest(out, item.durationTicks);
         else writeMusicXmlSegment(out, item.segment);
       }
       out.push('    </measure>');
     }
+  }
+
+  function musicXmlMeasures(track, ppqn, defaultBeats, defaultBeatType, maxTick) {
+    const timeChanges = track.events.filter((event) => event.kind === 'timeSignature').sort((a, b) => a.tick - b.tick);
+    const keyChanges = track.events.filter((event) => event.kind === 'keySignature').sort((a, b) => a.tick - b.tick);
+    const measures = [];
+    let tick = 0;
+    let timeIndex = 0;
+    let keyIndex = 0;
+    let beats = defaultBeats;
+    let beatType = defaultBeatType;
+    let key = { fifths: 0, mode: 'major' };
+
+    while (measures.length === 0 || tick < maxTick) {
+      let attributes = measures.length === 0;
+      while (timeIndex < timeChanges.length && timeChanges[timeIndex].tick <= tick) {
+        beats = timeChanges[timeIndex].beats;
+        beatType = timeChanges[timeIndex].beatType;
+        attributes = true;
+        timeIndex += 1;
+      }
+      while (keyIndex < keyChanges.length && keyChanges[keyIndex].tick <= tick) {
+        key = keyChanges[keyIndex];
+        attributes = true;
+        keyIndex += 1;
+      }
+      const measureTicks = round(ppqn * beats * (4 / beatType));
+      measures.push({ startTick: tick, endTick: tick + measureTicks, beats, beatType, key, attributes });
+      tick += measureTicks;
+    }
+    return measures;
+  }
+
+  function musicXmlMeasureIndexForTick(measures, tick) {
+    for (let index = 0; index < measures.length; index += 1) {
+      if (tick < measures[index].endTick) return index;
+    }
+    return measures.length - 1;
+  }
+
+  function writeMusicXmlAttributes(out, ppqn, measure) {
+    out.push('      <attributes>');
+    out.push(`        <divisions>${ppqn}</divisions>`);
+    out.push(`        <key><fifths>${measure.key.fifths}</fifths><mode>${measure.key.mode}</mode></key>`);
+    out.push(`        <time><beats>${measure.beats}</beats><beat-type>${measure.beatType}</beat-type></time>`);
+    out.push('        <clef><sign>G</sign><line>2</line></clef>');
+    out.push('      </attributes>');
   }
 
   function appendMusicXmlRestItem(items, durationTicks) {
@@ -2746,10 +2855,7 @@ CB 56 Cowbell
       return;
     }
 
-    if (event.kind !== 'noteGroup') {
-      writeMusicXmlDirection(out, musicXmlTimelineWords(event));
-      return;
-    }
+    if (event.kind !== 'noteGroup') return;
 
     const harmony = musicXmlHarmony(event.notation);
     if (harmony) out.push(harmony);
@@ -2845,15 +2951,6 @@ CB 56 Cowbell
     out.push('      <direction placement="below">');
     out.push(`        <direction-type><dynamics><${mark}/></dynamics></direction-type>`);
     out.push('      </direction>');
-  }
-
-  function musicXmlTimelineWords(event) {
-    if (event.kind === 'programChange') return event.instrumentName ? `program ${event.program + 1} ${event.instrumentName}` : `program ${event.program + 1}`;
-    if (event.kind === 'drumInstrument') return `drum ${event.drumCode}`;
-    if (event.kind === 'controlChange') return `ctrl ${event.controller},${event.value}`;
-    if (event.kind === 'pitchBend') return `pitch ${event.value14}`;
-    if (event.kind === 'sysex') return `sysex ${event.data.join(',')}`;
-    return '';
   }
 
   function musicXmlHarmony(notation) {
@@ -2962,6 +3059,12 @@ CB 56 Cowbell
       } else if (event.kind === 'programChange') {
         pushDelta(event.tick);
         pushBytes(out, 0xC0 | event.channel, event.program);
+      } else if (event.kind === 'timeSignature') {
+        pushDelta(event.tick);
+        pushBytes(out, 0xFF, 0x58, 4, event.beats, midiBeatTypePower(event.beatType), 24, 8);
+      } else if (event.kind === 'keySignature') {
+        pushDelta(event.tick);
+        pushBytes(out, 0xFF, 0x59, 2, event.fifths, event.mode === 'minor' ? 1 : 0);
       } else if (event.kind === 'drumInstrument') {
         // Selecting a Musicpad drum instrument changes later note state only.
       } else {
@@ -2974,7 +3077,7 @@ CB 56 Cowbell
     return out;
   }
 
-  function midiBytesFromTracks(ppqn, tempo, mtracks) {
+  function midiBytesFromTracks(ppqn, tempo, mtracks, title, author) {
     const pretrack = [];
     pushAscii(pretrack, 'MThd');
     pushUint32(pretrack, 6);
@@ -2986,6 +3089,16 @@ CB 56 Cowbell
     const tempoMicros = 1000000 * 60 / tempo;
     let pretrackOutput = false;
     const meta = [];
+    if (title) {
+      pushBytes(meta, 0, 0xFF, 0x03);
+      pushVarLen(meta, title.length);
+      pushAscii(meta, title);
+    }
+    if (author) {
+      pushBytes(meta, 0, 0xFF, 0x02);
+      pushVarLen(meta, author.length);
+      pushAscii(meta, author);
+    }
     pushBytes(meta, 0, 0xFF, 1, VERSION.length);
     pushAscii(meta, VERSION);
     pushBytes(meta, 0, 0xFF, 0x51, 3, (tempoMicros >> 16) & 0xFF, (tempoMicros >> 8) & 0xFF, tempoMicros & 0xFF);
