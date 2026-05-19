@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MIDI View</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: Canvas;
+      color: CanvasText;
+    }
+    header {
+      padding: 1rem;
+      border-bottom: 1px solid color-mix(in srgb, CanvasText 20%, transparent);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    h1 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem;
+    }
+    textarea {
+      flex: 1;
+      width: 100%;
+      box-sizing: border-box;
+      resize: none;
+      font: 13px/1.35 ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      tab-size: 2;
+      white-space: pre;
+    }
+    #status {
+      min-height: 1.2em;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>MIDI View</h1>
+    <input id="file" type="file" accept=".mid,.midi,audio/midi,audio/x-midi">
+  </header>
+  <main>
+    <div id="status">Choose a MIDI file.</div>
+    <textarea id="output" spellcheck="false" readonly></textarea>
+  </main>
+
+  <script>
+    'use strict';
+
+    const fileInput = document.getElementById('file');
+    const status = document.getElementById('status');
+    const output = document.getElementById('output');
+
+    const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const CONTROLLERS = {
+      1: 'modulation', 7: 'volume', 10: 'pan', 11: 'expression', 64: 'sustain pedal',
+      65: 'portamento', 71: 'resonance', 72: 'release time', 73: 'attack time', 74: 'brightness',
+      91: 'reverb', 93: 'chorus', 120: 'all sound off', 121: 'reset controllers',
+      123: 'all notes off'
+    };
+    const META = {
+      0x00: 'sequence number', 0x01: 'text', 0x02: 'copyright', 0x03: 'track name',
+      0x04: 'instrument name', 0x05: 'lyric', 0x06: 'marker', 0x07: 'cue point',
+      0x20: 'MIDI channel prefix', 0x21: 'MIDI port', 0x2F: 'end of track',
+      0x51: 'set tempo', 0x54: 'SMPTE offset', 0x58: 'time signature',
+      0x59: 'key signature', 0x7F: 'sequencer-specific'
+    };
+
+    fileInput.addEventListener('change', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+      try {
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const lines = parseMidi(bytes);
+        output.value = lines.join('\n');
+        status.textContent = `${file.name}: ${bytes.length} bytes, ${lines.length} lines`;
+      } catch (error) {
+        output.value = '';
+        status.textContent = error.message;
+      }
+    });
+
+    function parseMidi(bytes) {
+      const reader = new Reader(bytes);
+      const lines = [];
+      const magic = reader.ascii(4);
+      if (magic !== 'MThd') throw new Error('Not a MIDI file: missing MThd header');
+      const headerLength = reader.u32();
+      const headerEnd = reader.pos + headerLength;
+      const format = reader.u16();
+      const trackCount = reader.u16();
+      const division = reader.u16();
+      reader.pos = headerEnd;
+
+      lines.push(`MIDI header: format ${format}, tracks ${trackCount}, division ${describeDivision(division)}`);
+      lines.push('');
+
+      for (let trackIndex = 0; trackIndex < trackCount; trackIndex += 1) {
+        const trackMagic = reader.ascii(4);
+        if (trackMagic !== 'MTrk') throw new Error(`Track ${trackIndex + 1}: missing MTrk chunk`);
+        const trackLength = reader.u32();
+        const trackEnd = reader.pos + trackLength;
+        lines.push(`Track ${trackIndex + 1} (${trackLength} bytes)`);
+        parseTrack(reader, trackEnd, lines);
+        lines.push('');
+        reader.pos = trackEnd;
+      }
+
+      return lines;
+    }
+
+    function parseTrack(reader, trackEnd, lines) {
+      let absolute = 0;
+      let runningStatus = 0;
+
+      while (reader.pos < trackEnd) {
+        const eventStart = reader.pos;
+        const delta = reader.varlen();
+        absolute += delta;
+        let statusByte = reader.u8();
+        let running = false;
+
+        if (statusByte < 0x80) {
+          if (!runningStatus) throw new Error(`Running status without previous status at offset ${eventStart}`);
+          reader.pos -= 1;
+          statusByte = runningStatus;
+          running = true;
+        } else if (statusByte < 0xF0) {
+          runningStatus = statusByte;
+        }
+
+        let description;
+        if (statusByte === 0xFF) {
+          runningStatus = 0;
+          const type = reader.u8();
+          const length = reader.varlen();
+          const dataStart = reader.pos;
+          const data = reader.bytes(length);
+          description = describeMeta(type, data);
+          lines.push(formatLine(absolute, reader.bytesFrom(eventStart, reader.pos), description));
+          if (type === 0x2F) break;
+          if (dataStart + length > trackEnd) throw new Error('Meta event exceeds track length');
+        } else if (statusByte === 0xF0 || statusByte === 0xF7) {
+          runningStatus = 0;
+          const length = reader.varlen();
+          const data = reader.bytes(length);
+          description = `${statusByte === 0xF0 ? 'SysEx' : 'escaped SysEx'} (${data.length} bytes)`;
+          lines.push(formatLine(absolute, reader.bytesFrom(eventStart, reader.pos), description));
+        } else if (statusByte >= 0x80 && statusByte <= 0xEF) {
+          const eventType = statusByte & 0xF0;
+          const channel = (statusByte & 0x0F) + 1;
+          const dataLength = eventType === 0xC0 || eventType === 0xD0 ? 1 : 2;
+          const data = reader.bytes(dataLength);
+          description = describeChannelEvent(eventType, channel, data, running);
+          lines.push(formatLine(absolute, reader.bytesFrom(eventStart, reader.pos), description));
+        } else {
+          runningStatus = 0;
+          description = `system event 0x${hex(statusByte)}`;
+          lines.push(formatLine(absolute, reader.bytesFrom(eventStart, reader.pos), description));
+        }
+      }
+    }
+
+    function describeChannelEvent(eventType, channel, data, running) {
+      const prefix = running ? '(running status) ' : '';
+      const a = data[0];
+      const b = data[1];
+      if (eventType === 0x80) return `${prefix}note off ch ${channel}: ${noteName(a)} velocity ${b}`;
+      if (eventType === 0x90) return `${prefix}${b === 0 ? 'note off' : 'note on'} ch ${channel}: ${noteName(a)} velocity ${b}`;
+      if (eventType === 0xA0) return `${prefix}poly pressure ch ${channel}: ${noteName(a)} pressure ${b}`;
+      if (eventType === 0xB0) return `${prefix}control change ch ${channel}: ${a}${CONTROLLERS[a] ? ` (${CONTROLLERS[a]})` : ''} = ${b}`;
+      if (eventType === 0xC0) return `${prefix}program change ch ${channel}: ${a + 1}`;
+      if (eventType === 0xD0) return `${prefix}channel pressure ch ${channel}: ${a}`;
+      if (eventType === 0xE0) return `${prefix}pitch bend ch ${channel}: ${((b << 7) | a) - 8192}`;
+      return `${prefix}unknown channel event 0x${hex(eventType)} ch ${channel}: ${bytesHex(data)}`;
+    }
+
+    function describeMeta(type, data) {
+      const name = META[type] || `meta 0x${hex(type)}`;
+      if (type >= 0x01 && type <= 0x07) return `${name}: "${text(data)}"`;
+      if (type === 0x2F) return 'end of track';
+      if (type === 0x51 && data.length === 3) {
+        const micros = (data[0] << 16) | (data[1] << 8) | data[2];
+        return `set tempo: ${micros} us/qn (${(60000000 / micros).toFixed(2)} BPM)`;
+      }
+      if (type === 0x58 && data.length >= 4) return `time signature: ${data[0]}/${2 ** data[1]}, clocks ${data[2]}, 32nds/qn ${data[3]}`;
+      if (type === 0x59 && data.length >= 2) return `key signature: ${signedByte(data[0])} fifths, ${data[1] ? 'minor' : 'major'}`;
+      return `${name}: ${bytesHex(data)}`;
+    }
+
+    function formatLine(time, eventBytes, description) {
+      return `${String(time).padStart(8, ' ')}  ${bytesHex(eventBytes).padEnd(36, ' ')}  ${description}`;
+    }
+
+    function describeDivision(value) {
+      if ((value & 0x8000) === 0) return `${value} ticks/qn`;
+      const fps = 256 - ((value >> 8) & 0xFF);
+      const ticks = value & 0xFF;
+      return `SMPTE ${fps} fps, ${ticks} ticks/frame`;
+    }
+
+    function noteName(value) {
+      return `${NOTE_NAMES[value % 12]}${Math.floor(value / 12) - 1} (${value})`;
+    }
+
+    function signedByte(value) {
+      return value > 127 ? value - 256 : value;
+    }
+
+    function text(bytes) {
+      return new TextDecoder('latin1').decode(bytes).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '.');
+    }
+
+    function bytesHex(bytes) {
+      return Array.from(bytes, hex).join(' ');
+    }
+
+    function hex(value) {
+      return value.toString(16).toUpperCase().padStart(2, '0');
+    }
+
+    class Reader {
+      constructor(bytes) {
+        this.data = bytes;
+        this.pos = 0;
+      }
+      u8() {
+        if (this.pos >= this.data.length) throw new Error('Unexpected end of file');
+        return this.data[this.pos++];
+      }
+      u16() {
+        return (this.u8() << 8) | this.u8();
+      }
+      u32() {
+        return ((this.u8() << 24) | (this.u8() << 16) | (this.u8() << 8) | this.u8()) >>> 0;
+      }
+      ascii(length) {
+        return String.fromCharCode(...this.bytes(length));
+      }
+      bytes(length) {
+        if (this.pos + length > this.data.length) throw new Error('Unexpected end of file');
+        const out = this.data.slice(this.pos, this.pos + length);
+        this.pos += length;
+        return out;
+      }
+      bytesFrom(start, end) {
+        return this.data.slice(start, end);
+      }
+      varlen() {
+        let value = 0;
+        for (let i = 0; i < 4; i += 1) {
+          const byte = this.u8();
+          value = (value << 7) | (byte & 0x7F);
+          if ((byte & 0x80) === 0) return value;
+        }
+        throw new Error('Invalid variable-length quantity');
+      }
+    }
+  </script>
+</body>
+</html>
