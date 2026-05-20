@@ -79,13 +79,31 @@
 
     h1 {
       margin: 0;
-      font-size: clamp(1.25rem, 2.5vw, 2rem);
-      letter-spacing: -0.04em;
       line-height: 1;
+    }
+
+    .brand-home {
+      min-height: auto;
+      padding: 0;
+      border: 0;
+      border-radius: 0;
       background: linear-gradient(90deg, var(--text), #b8c7ff 45%, var(--accent2));
+      box-shadow: none;
+      color: transparent;
       -webkit-background-clip: text;
       background-clip: text;
-      color: transparent;
+      font: inherit;
+      font-size: clamp(1.25rem, 2.5vw, 2rem);
+      font-weight: 750;
+      letter-spacing: -0.04em;
+    }
+
+    .brand-home:hover {
+      transform: none;
+      background: linear-gradient(90deg, #ffffff, var(--accent2));
+      box-shadow: none;
+      -webkit-background-clip: text;
+      background-clip: text;
     }
 
     h2 {
@@ -431,7 +449,7 @@
   <main>
     <div class="header">
       <div class="header-left">
-        <h1>Musicpad</h1>
+        <h1><button id="homeLink" class="brand-home" type="button" title="show the editor">Musicpad</button></h1>
         <div class="page-selector">
           <button id="pageSelector" type="button" aria-haspopup="true" aria-expanded="false">Editor</button>
           <div id="pageMenu" class="page-menu" hidden></div>
@@ -440,7 +458,7 @@
       <div class="header-actions">
         <div class="toolbar">
           <div class="load-selector">
-            <button id="load" type="button" title="loads your song into the editor" aria-haspopup="true" aria-expanded="false">Updload</button>
+            <button id="load" type="button" title="loads your song into the editor" aria-haspopup="true" aria-expanded="false">Upload</button>
             <div id="loadMenu" class="load-menu" hidden>
               <button id="loadLocal" type="button">Local</button>
               <button id="loadSongList" type="button">Song List</button>
@@ -549,6 +567,7 @@ $intro ($bar2 $bar1)*2</textarea>
     const { bundledSongs, projectISongs } = window.musicpadSongLists;
     const pageNames = ['editor', 'tutorial', 'reference', 'about'];
     const pageLabels = { editor: 'Editor', tutorial: 'Tutorial', reference: 'Reference', about: 'About', songList: 'Song List' };
+    const homeLink = document.getElementById('homeLink');
     const pageSelector = document.getElementById('pageSelector');
     const pageMenu = document.getElementById('pageMenu');
     const toolbar = document.querySelector('.toolbar');
@@ -1434,6 +1453,7 @@ $intro ($bar2 $bar1)*2</textarea>
       return playMusicpadSource(source.value, 'generated MIDI');
     }
 
+    homeLink.addEventListener('click', () => showPage('editor'));
     pageSelector.addEventListener('click', togglePageMenu);
 
     document.addEventListener('click', (event) => {
