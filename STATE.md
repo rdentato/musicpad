@@ -4,26 +4,23 @@
 main
 
 ## Active Task
-M5 planning complete; next session should begin Phase 1 baseline tests for a rich internal representation before MusicXML.
+M6 optimization pass plus direct-MIDI cleanup implemented, verified, and rebuilt; awaiting review/commit decision next session.
 
 ## Last Stop
-The first MusicXML attempt was reverted. A tighter multi-session plan was recorded: baseline tests, rich IR design, MIDI-from-IR with stable output, then MusicXML from IR. No implementation changes are pending beyond planning docs.
+Implemented M6 Steps 1–4 in `src/musicpad.js`, then removed unused legacy direct-MIDI path from `MusicpadEngine`: `addTrack()`, `postOut()`, `this.mtracks`, and old array MIDI helper functions. Current app uses top-level `musicpadToMidi()` / `musicpadToMusicXml()` through the IR path. `node tests/musicpad.test.js` passed after cleanup, and `src/build` rebuilt ignored `src/musicpad.html`.
 
 ## Open Questions
-1. What exact IR shape should preserve both performance and notation intent?
-2. Which current Musicpad examples should become regression fixtures for chords, guitar chords, strum, dynamics, rests/holds, macros, and controllers?
-3. What default MusicXML notation policy should be used later for time signature/measures?
+1. Should the optimization/cleanup changes be committed as one commit or split into optimization + cleanup commits?
+2. Should benchmarking become an automated script before deeper parser optimizations?
+3. Are `old/` and `xxx/` intentionally untracked and to remain untouched?
 
 ## Last Decision
-MusicXML must not be reconstructed from MIDI bytes/note-ons alone. The IR must preserve symbolic intent such as `[g:Am]`, chord source, strum, note spelling, stress/soft/dynamics, and explicit rests/holds, while also preserving exact played timing for MIDI.
+Remove legacy `MusicpadEngine.addTrack()` / `postOut()` direct-MIDI methods because the current app does not call them and there are no external consumers.
 
 ## Pointers
-- PLAN.md M5
-- src/musicpad.js (`MusicpadEngine.addTrack` currently emits MIDI directly)
+- PLAN.md M6
+- journal/2026-05-20-optimization-plan.md
+- baseline, Step 1, and Step 2 timing comparisons in journal
+- src/musicpad.js (`musicXmlDurationComponents`, `irTrackToMidiTrack`, `midiBytesFromTracks`, `musicXmlMeasureIndexForTick`, per-measure segment sorting)
 - tests/musicpad.test.js
-- project-docs/musicpad.md
-- project-docs/musicpad.perl
 - project-docs/songs/*.mpd
-- src/musicpad-html.html
-- src/build
-- journal/2026-05-17-soundfont-playback.md

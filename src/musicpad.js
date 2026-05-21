@@ -1200,6 +1200,26 @@ CB 56 Cowbell
 
   const NUMBER_LIST_CACHE = new Map();
   const GUITAR_FRET_CACHE = new Map();
+  const MUSIC_XML_DURATION_VALUES = [
+    { duration: 1152, type: 'whole', dots: 1 },
+    { duration: 768, type: 'whole', dots: 0 },
+    { duration: 576, type: 'half', dots: 1 },
+    { duration: 384, type: 'half', dots: 0 },
+    { duration: 288, type: 'quarter', dots: 1 },
+    { duration: 192, type: 'quarter', dots: 0 },
+    { duration: 144, type: 'eighth', dots: 1 },
+    { duration: 96, type: 'eighth', dots: 0 },
+    { duration: 72, type: '16th', dots: 1 },
+    { duration: 48, type: '16th', dots: 0 },
+    { duration: 36, type: '32nd', dots: 1 },
+    { duration: 24, type: '32nd', dots: 0 },
+    { duration: 18, type: '64th', dots: 1 },
+    { duration: 12, type: '64th', dots: 0 },
+    { duration: 6, type: '128th', dots: 0 },
+    { duration: 3, type: '256th', dots: 0 },
+    { duration: 1, type: '256th', dots: 0 }
+  ];
+  const MUSIC_XML_DURATION_COMPONENT_CACHE = new Map();
 
   function musicpadToMidi(source, options) {
     return musicpadIrToMidi(musicpadToIr(source, options));
@@ -1287,7 +1307,6 @@ CB 56 Cowbell
       this.title = '';
       this.author = '';
       this.string = '';
-      this.mtracks = [];
     }
 
     render(source) {
@@ -1969,423 +1988,6 @@ CB 56 Cowbell
       return { index: trackIndex, events };
     }
 
-    addTrack(trackSource) {
-      let seqtime = 0;
-      let abstime = 0;
-      let nlength = 4;
-      let octave = 4;
-      let note = 65;
-      let chord = [note];
-      let chan = 0;
-      let nratio = 1;
-      let nduty = this.gduty / 100;
-      let vel = this.gvel;
-      let trans = 0;
-      let nivstress = 50;
-      let nivsoft = 25;
-      let loosew = this.timeToTick(this.gloosew);
-      let looseq = this.glooseq;
-      let velvarw = this.gvelvarw;
-      let velvarq = this.gvelvarq;
-      let guitmode = this.globalguitmode;
-      let strumdelay = 0;
-      let strumup = 0;
-      let strumhitdown = 0;
-      let strumupvel = 100;
-      let tuning = [40, 45, 50, 55, 59, 64];
-      let tommode = 0;
-      let previousnotetime = 0;
-      const track = [];
-
-      const values = tokenizeTrackSource(trackSource);
-      for (let command of values) {
-        let pause = 0;
-        let stress = 0;
-        let soft = 0;
-        let hold = 1;
-        let deltanote = 0;
-        let temptrans = 0;
-        let match;
-
-        if (command.length === 0) continue;
-        const lower = command.toLowerCase();
-
-        if (lower.includes('tuning[') && (match = command.match(/tuning\[(.*)\]/i))) {
-          const tuningcommand = match[1];
-          tuning = tuningcommand.split(',').map((part) => {
-            const tun = part.match(/([A-G][b#\+-]?)(\d)/i);
-            if (!tun) this.error(`tuning definition problem in ${tuningcommand} : I don't understand ${part}`);
-            const mapped = NOTE_MAP[tun[1].toUpperCase()];
-            if (mapped == null) this.error(`tuning definition problem in ${tuningcommand} : I don't understand ${part}`);
-            return mapped + 12 * Number(tun[2]);
-          });
-          continue;
-        }
-
-        if (command.includes('[')) {
-          if ((match = command.match(/\[(-?\d+,.*)\]/i))) {
-            command = command.replace(/\[(-?\d+,.*)\]/i, '');
-            chord = numberList(match[1]).map((n) => n + note);
-          }
-
-          if ((match = command.match(/\[g:((-|\d+),.*)\]/i))) {
-            command = command.replace(/\[g:((-|\d+),.*)\]/i, '');
-            chord = guitarChord(match[1], tuning);
-          }
-
-          if ((match = command.match(/\[g:(.*)\]/i))) {
-            command = command.replace(/\[g:(.*)\]/i, '');
-            let keycommand = match[1];
-            if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) {
-              keycommand = keycommand.replace(/:.*/i, '');
-              if (GUITAR_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know guitar chord ${match[1]}`);
-            }
-            chord = guitarChord(GUITAR_CHORDS[keycommand.toUpperCase()], tuning);
-          }
-
-          if ((match = command.match(/\[(.*)\]/i))) {
-            command = command.replace(/\[(.*)\]/i, '');
-            let keycommand = match[1];
-            const keycommand2 = match[1];
-            if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
-              const root = keycommand.match(/^([A-G][b#\+-]?)/i);
-              if (root) {
-                const keynote = root[1];
-                keycommand = keycommand.replace(/^([A-G][b#\+-]?)/i, '');
-                if (KEY_CHORDS[keycommand.toUpperCase()] == null) {
-                  keycommand = keycommand.replace(/:.*/i, '');
-                  if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand} in ${keycommand2}`);
-                }
-                const mapped = NOTE_MAP[keynote.toUpperCase()];
-                if (mapped == null) this.error(`I don't know note ${keynote} in ${keycommand2}`);
-                note = mapped + 12 * octave;
-              } else {
-                keycommand = keycommand.replace(/:.*/i, '');
-                if (KEY_CHORDS[keycommand.toUpperCase()] == null) this.error(`I don't know chord ${keycommand2}`);
-              }
-            }
-            chord = KEY_CHORDS[keycommand.toUpperCase()].map((n) => n + note);
-          }
-        }
-
-        if (lower.startsWith('strum')) {
-          const strum = lower.slice(5).split(',');
-          strumdelay = this.timeToTick(Number(strum[0]));
-          if (strum.length > 1) strumup = this.timeToTick(Number(strum[1]));
-          if (strum.length > 2) strumupvel = Number(strum[2]);
-          continue;
-        }
-        if (lower.startsWith('tomson')) {
-          tommode = 1;
-          chan = (10 - 1) & 0xF;
-          note = DRUM_MAP.T4;
-          chord = [note];
-          continue;
-        }
-        if (lower.startsWith('tomsoff')) {
-          tommode = 0;
-          continue;
-        }
-        if (lower.startsWith('guiton')) {
-          guitmode = 1;
-          continue;
-        }
-        if (lower.startsWith('guitoff')) {
-          guitmode = 0;
-          continue;
-        }
-        if (lower.startsWith('stress') && hasDigit(command)) {
-          nivstress = Number(command.slice(6));
-          continue;
-        }
-        if (lower.startsWith('soft') && hasDigit(command)) {
-          nivsoft = Number(command.slice(4));
-          continue;
-        }
-        if (lower.startsWith('loose')) {
-          const parts = command.slice(5).split(',');
-          loosew = this.timeToTick(Number(parts[0]));
-          looseq = parts[1];
-          continue;
-        }
-        if (lower.startsWith('velvar')) {
-          const parts = command.slice(6).split(',');
-          velvarw = Number(parts[0]);
-          velvarq = parts[1];
-          continue;
-        }
-        if (lower.startsWith('ctrl')) {
-          const parts = command.slice(4).split(',');
-          pushVarLen(track, round(abstime - seqtime));
-          pushBytes(track, 0xB0 | chan, Number(parts[0]), Number(parts[1]));
-          seqtime = abstime;
-          continue;
-        }
-        if (lower.startsWith('sysex')) {
-          const sysex = command.slice(5).split(',').filter((v) => v.length).map(Number);
-          pushVarLen(track, round(abstime - seqtime));
-          pushBytes(track, 240);
-          pushVarLen(track, sysex.length);
-          for (const sys of sysex) pushBytes(track, sys);
-          pushBytes(track, 247);
-          seqtime = abstime;
-          continue;
-        }
-        if (lower.startsWith('pitch+')) {
-          const pitch = clamp((8192 * Number(command.slice(6)) / 100) + 8192, 0, 16383);
-          pushVarLen(track, round(abstime - seqtime));
-          pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
-          seqtime = abstime;
-          continue;
-        }
-        if (lower.startsWith('pitch-')) {
-          const pitch = clamp(8192 - (8192 * Number(command.slice(6)) / 100), 0, 16383);
-          pushVarLen(track, round(abstime - seqtime));
-          pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
-          seqtime = abstime;
-          continue;
-        }
-        if (lower.startsWith('pitch0')) {
-          const pitch = 8192;
-          pushVarLen(track, round(abstime - seqtime));
-          pushBytes(track, 0xE0 | chan, pitch & 0x7F, (pitch >> 7) & 0x7F);
-          seqtime = abstime;
-          continue;
-        }
-
-        if (lower.startsWith('ch') && hasDigit(command)) {
-          chan = (Number(command.slice(2)) - 1) & 0xF;
-          continue;
-        }
-        if (lower[0] === 'i' && isDigitCode(lower.charCodeAt(1))) {
-          const program = Number(command.slice(1));
-          pushVarLen(track, 0);
-          pushBytes(track, 0xC0 | chan, program === 0 ? 0 : program - 1);
-          continue;
-        }
-        if (lower[0] === 'i' && command.length > 1) {
-          const drum = DRUM_MAP[command.slice(1).toUpperCase()];
-          if (drum != null) {
-            note = drum;
-            chan = (10 - 1) & 0xF;
-            chord = [note];
-            continue;
-          }
-        }
-        if (lower[0] === 'i' && command.length > 1) {
-          const program = INSTRUMENT_MAP[command.slice(1).toUpperCase()];
-          if (program != null) {
-            pushVarLen(track, 0);
-            pushBytes(track, 0xC0 | chan, program);
-            continue;
-          }
-        }
-        if (lower[0] === 'i' && command.length >= 3) {
-          const drum = DRUM_MAP[command.slice(1, 3).toUpperCase()];
-          if (drum != null) {
-            note = drum;
-            chan = (10 - 1) & 0xF;
-            chord = [note];
-          }
-          continue;
-        }
-        if (lower.startsWith('nt+') && isDigitCode(lower.charCodeAt(3))) {
-          temptrans = Number(command[3]);
-          command = command.slice(0, 0) + command.slice(4);
-        }
-        if (lower.startsWith('nt-') && isDigitCode(lower.charCodeAt(3))) {
-          temptrans = -Number(command[3]);
-          command = command.slice(0, 0) + command.slice(4);
-        }
-
-        const currentLower = command.toLowerCase();
-        if (currentLower[0] === 'r') {
-          const slash = command.indexOf('/');
-          if (slash > 1) {
-            nratio = Number(command.slice(1, slash)) / Number(command.slice(slash + 1));
-            continue;
-          }
-        }
-        if (currentLower.startsWith('r1')) {
-          nratio = 1;
-          continue;
-        }
-        if (currentLower[0] === 'u' && hasDigit(command)) {
-          nduty = Number(command.slice(1)) / 100;
-          continue;
-        }
-        if (currentLower[0] === 'v' && hasDigit(command)) {
-          vel = Number(command.slice(1));
-          continue;
-        }
-        if (currentLower.startsWith('t+')) {
-          trans = Number(command.slice(2));
-          continue;
-        }
-        if (currentLower.startsWith('t0')) {
-          trans = 0;
-          continue;
-        }
-        if (currentLower.startsWith('t-')) {
-          trans = -Number(command.slice(2));
-          continue;
-        }
-
-        if (command === '/') {
-          octave += 1;
-          continue;
-        }
-        if (command === '\\') {
-          octave -= 1;
-          continue;
-        }
-
-        if (command.includes('/') && (match = command.match(/\/(\d+)/i))) {
-          nlength = Number(match[1]);
-          command = command.replace(/\/(\d+)/i, '');
-        }
-        if (hasNoteOrO(command) && (match = command.match(/([A-GO][b#\+-]?)(\d)/i))) {
-          octave = Number(match[2]);
-          command = command.replace(/([A-GO][b#\+-]?)(\d)/i, match[1]);
-        }
-        if (hasNote(command) && (match = command.match(/([A-G][b#\+-]?)/i))) {
-          const mapped = NOTE_MAP[match[1].toUpperCase()];
-          if (mapped != null) {
-            note = mapped + 12 * octave;
-            chord = [note];
-          }
-          command = command.replace(/([A-G][b#\+-]?)/i, '');
-        }
-        if (lower.includes('n+') && (match = command.match(/N\+(\d)/i))) {
-          deltanote = Number(match[1]);
-          command = command.replace(/N\+(\d)/i, '');
-        }
-        if (lower.includes('n-') && (match = command.match(/N-(\d)/i))) {
-          deltanote = -Number(match[1]);
-          command = command.replace(/N-(\d)/i, '');
-        }
-        if (lower.includes('n') && (match = command.match(/N(\d+)/i))) {
-          note = Number(match[1]);
-          chord = [note];
-          command = command.replace(/N(\d+)/i, '');
-        }
-
-        if (command.includes('o') || command.includes('O')) continue;
-
-        if (command.includes('=')) {
-          hold += countChar(command, '=');
-          command = command.replace(/=/g, '');
-        }
-        if (command.includes('P') || command.includes('p')) {
-          pause = 1;
-          command = command.replace(/P/i, '');
-        }
-        if (command.includes('-')) {
-          pause = 1;
-          command = command.replace('-', '');
-        }
-        if (command.includes("'")) {
-          stress = 1;
-          command = command.replace("'", '');
-        }
-        if (command.includes(',')) {
-          soft = 1;
-          command = command.replace(',', '');
-        }
-        if (hasDigit(command) && (match = command.match(/(\d+)/i))) {
-          if (guitmode) {
-            temptrans = Number(match[1]);
-          } else if (tommode) {
-            const drum = DRUM_MAP[`T${match[1]}`];
-            if (drum != null) {
-              note = drum;
-              chord = [note];
-            }
-          } else {
-            nlength = Number(match[1]);
-          }
-        }
-
-        if (!nlength) this.error("You seem to be trying to play a note of length 1/0 ... Haven't you mixed the guitar mode with normal mode ?");
-        let length = (1 / nlength) * nratio * hold;
-        length *= this.ppqn * 4;
-        if (deltanote) {
-          note += deltanote;
-          chord = [note];
-        }
-        if (pause) {
-          abstime += length;
-          continue;
-        }
-
-        let chordtemp;
-        if (strumup && (abstime - previousnotetime) < strumup && strumhitdown) {
-          chordtemp = [...chord].reverse();
-          strumhitdown = 0;
-        } else {
-          chordtemp = [...chord];
-          strumhitdown = 1;
-        }
-
-        let lvel = vel * (1 + velvarw * this.rndq(velvarq) / 100) * (strumhitdown ? 1 : strumupvel / 100);
-        if (stress) lvel *= (1 + nivstress / 100);
-        if (soft) lvel *= (1 - nivsoft / 100);
-        lvel = clamp(round(lvel), 0, 127);
-
-        const ticksOn = nduty * length;
-        const ticksOff = (1 - nduty) * length;
-        let firstnote = true;
-        let abstimetemp = abstime;
-        previousnotetime = abstime;
-
-        for (const chnote of chordtemp) {
-          const fnote = clamp(chnote + trans + temptrans, 0, 127);
-          let deltaOn;
-          if (firstnote) {
-            abstimetemp = abstime + loosew * this.rndq(looseq);
-            deltaOn = round(abstimetemp) - seqtime;
-            if (deltaOn <= round(loosew) * 2) {
-              abstimetemp -= deltaOn;
-              deltaOn = 0;
-            }
-            firstnote = false;
-          } else {
-            abstimetemp += strumdelay;
-            deltaOn = round(abstimetemp) - seqtime;
-          }
-          pushVarLen(track, deltaOn);
-          pushBytes(track, 0x90 | chan, fnote, lvel);
-          seqtime += deltaOn;
-        }
-
-        abstime += ticksOn;
-        firstnote = true;
-
-        for (const chnote of chordtemp) {
-          const fnote = clamp(chnote + trans + temptrans, 0, 127);
-          let deltaOff;
-          if (firstnote) {
-            deltaOff = round(abstime + loosew * this.rndq(looseq)) - seqtime;
-            if (deltaOff < 0) deltaOff = 0;
-            firstnote = false;
-          } else {
-            deltaOff = 0;
-          }
-          pushVarLen(track, deltaOff);
-          pushBytes(track, 0x80 | chan, fnote, 0);
-          seqtime += deltaOff;
-        }
-
-        abstime += ticksOff;
-      }
-
-      let lastDelta = round(abstime) - seqtime;
-      if (lastDelta < 0) lastDelta = 0;
-      pushVarLen(track, lastDelta);
-      pushBytes(track, 0xFF, 0x2F, 0);
-      this.mtracks.push(track);
-    }
-
     rndq(q) {
       const text = String(q).toUpperCase();
       if (text === 'G') {
@@ -2409,10 +2011,6 @@ CB 56 Cowbell
       const r = this.rng();
       const power = Number(q);
       return (Math.abs(r - 0.5) * 2) ** power * (r > 0.5 ? 1 : -1);
-    }
-
-    postOut() {
-      return midiBytesFromTracks(this.ppqn, this.tempo, this.mtracks, this.title, this.author);
     }
 
     getBound(stringa, startp, opendelim, closedelim) {
@@ -2731,8 +2329,14 @@ CB 56 Cowbell
     const measureEvents = new Map();
 
     function addSegment(measureIndex, segment) {
-      if (!measureEvents.has(measureIndex)) measureEvents.set(measureIndex, []);
-      measureEvents.get(measureIndex).push(segment);
+      let entry = measureEvents.get(measureIndex);
+      if (!entry) {
+        entry = { segments: [], lastStartTick: null, needsSort: false };
+        measureEvents.set(measureIndex, entry);
+      }
+      if (entry.lastStartTick != null && segment.startTick < entry.lastStartTick) entry.needsSort = true;
+      entry.lastStartTick = segment.startTick;
+      entry.segments.push(segment);
     }
 
     for (const event of track.events) {
@@ -2763,7 +2367,8 @@ CB 56 Cowbell
       out.push(`    <measure number="${measureIndex + 1}">`);
       if (measure.attributes) writeMusicXmlAttributes(out, ppqn, measure);
 
-      const segments = (measureEvents.get(measureIndex) || []).sort((a, b) => a.startTick - b.startTick);
+      const eventEntry = measureEvents.get(measureIndex);
+      const segments = eventEntry ? (eventEntry.needsSort ? eventEntry.segments.sort((a, b) => a.startTick - b.startTick) : eventEntry.segments) : [];
       const items = [];
       let cursor = measure.startTick;
       for (const segment of segments) {
@@ -2826,10 +2431,19 @@ CB 56 Cowbell
   }
 
   function musicXmlMeasureIndexForTick(measures, tick) {
-    for (let index = 0; index < measures.length; index += 1) {
-      if (tick < measures[index].endTick) return index;
+    let low = 0;
+    let high = measures.length - 1;
+    let found = high;
+    while (low <= high) {
+      const middle = (low + high) >> 1;
+      if (tick < measures[middle].endTick) {
+        found = middle;
+        high = middle - 1;
+      } else {
+        low = middle + 1;
+      }
     }
-    return measures.length - 1;
+    return found;
   }
 
   function writeMusicXmlAttributes(out, ppqn, measure) {
@@ -2911,33 +2525,20 @@ CB 56 Cowbell
   }
 
   function musicXmlDurationComponents(duration) {
-    let remaining = round(duration);
-    const values = [
-      { duration: 1152, type: 'whole', dots: 1 },
-      { duration: 768, type: 'whole', dots: 0 },
-      { duration: 576, type: 'half', dots: 1 },
-      { duration: 384, type: 'half', dots: 0 },
-      { duration: 288, type: 'quarter', dots: 1 },
-      { duration: 192, type: 'quarter', dots: 0 },
-      { duration: 144, type: 'eighth', dots: 1 },
-      { duration: 96, type: 'eighth', dots: 0 },
-      { duration: 72, type: '16th', dots: 1 },
-      { duration: 48, type: '16th', dots: 0 },
-      { duration: 36, type: '32nd', dots: 1 },
-      { duration: 24, type: '32nd', dots: 0 },
-      { duration: 18, type: '64th', dots: 1 },
-      { duration: 12, type: '64th', dots: 0 },
-      { duration: 6, type: '128th', dots: 0 },
-      { duration: 3, type: '256th', dots: 0 },
-      { duration: 1, type: '256th', dots: 0 }
-    ];
+    const cacheKey = round(duration);
+    const cached = MUSIC_XML_DURATION_COMPONENT_CACHE.get(cacheKey);
+    if (cached) return cached;
+
+    let remaining = cacheKey;
     const out = [];
     while (remaining > 0) {
-      const value = values.find((candidate) => candidate.duration <= remaining) || values[values.length - 1];
-      out.push(value);
+      const value = MUSIC_XML_DURATION_VALUES.find((candidate) => candidate.duration <= remaining) || MUSIC_XML_DURATION_VALUES[MUSIC_XML_DURATION_VALUES.length - 1];
+      out.push(Object.freeze({ duration: value.duration, type: value.type, dots: value.dots }));
       remaining -= value.duration;
     }
-    return out;
+    const components = Object.freeze(out);
+    MUSIC_XML_DURATION_COMPONENT_CACHE.set(cacheKey, components);
+    return components;
   }
 
   function writeMusicXmlDirection(out, words) {
@@ -3020,14 +2621,14 @@ CB 56 Cowbell
   }
 
   function irTrackToMidiTrack(track) {
-    const out = [];
+    const out = new MidiByteWriter(track.events.length * 8 + 16);
     let seqtime = 0;
     let endTick = 0;
 
     function pushDelta(tick) {
       let delta = tick - seqtime;
       if (delta < 0) delta = 0;
-      pushVarLen(out, delta);
+      out.pushVarLen(delta);
       seqtime += delta;
     }
 
@@ -3035,36 +2636,36 @@ CB 56 Cowbell
       if (event.kind === 'noteGroup') {
         for (const note of event.emittedNotes) {
           pushDelta(note.startTick);
-          pushBytes(out, 0x90 | note.channel, note.midiPitch, note.velocity);
+          out.pushBytes(0x90 | note.channel, note.midiPitch, note.velocity);
         }
         for (const note of event.emittedNotes) {
           pushDelta(note.endTick);
-          pushBytes(out, 0x80 | note.channel, note.midiPitch, 0);
+          out.pushBytes(0x80 | note.channel, note.midiPitch, 0);
         }
         endTick = Math.max(endTick, event.tick + event.durationTicks);
       } else if (event.kind === 'rest') {
         endTick = Math.max(endTick, event.tick + event.durationTicks);
       } else if (event.kind === 'controlChange') {
         pushDelta(event.tick);
-        pushBytes(out, 0xB0 | event.channel, event.controller, event.value);
+        out.pushBytes(0xB0 | event.channel, event.controller, event.value);
       } else if (event.kind === 'pitchBend') {
         pushDelta(event.tick);
-        pushBytes(out, 0xE0 | event.channel, event.value14 & 0x7F, (event.value14 >> 7) & 0x7F);
+        out.pushBytes(0xE0 | event.channel, event.value14 & 0x7F, (event.value14 >> 7) & 0x7F);
       } else if (event.kind === 'sysex') {
         pushDelta(event.tick);
-        pushBytes(out, 240);
-        pushVarLen(out, event.data.length);
-        for (const value of event.data) pushBytes(out, value);
-        pushBytes(out, 247);
+        out.pushByte(240);
+        out.pushVarLen(event.data.length);
+        for (const value of event.data) out.pushByte(value);
+        out.pushByte(247);
       } else if (event.kind === 'programChange') {
         pushDelta(event.tick);
-        pushBytes(out, 0xC0 | event.channel, event.program);
+        out.pushBytes(0xC0 | event.channel, event.program);
       } else if (event.kind === 'timeSignature') {
         pushDelta(event.tick);
-        pushBytes(out, 0xFF, 0x58, 4, event.beats, midiBeatTypePower(event.beatType), 24, 8);
+        out.pushBytes(0xFF, 0x58, 4, event.beats, midiBeatTypePower(event.beatType), 24, 8);
       } else if (event.kind === 'keySignature') {
         pushDelta(event.tick);
-        pushBytes(out, 0xFF, 0x59, 2, event.fifths, event.mode === 'minor' ? 1 : 0);
+        out.pushBytes(0xFF, 0x59, 2, event.fifths, event.mode === 'minor' ? 1 : 0);
       } else if (event.kind === 'drumInstrument') {
         // Selecting a Musicpad drum instrument changes later note state only.
       } else {
@@ -3073,82 +2674,128 @@ CB 56 Cowbell
     }
 
     pushDelta(endTick);
-    pushBytes(out, 0xFF, 0x2F, 0);
-    return out;
+    out.pushBytes(0xFF, 0x2F, 0);
+    return out.toUint8Array();
   }
 
   function midiBytesFromTracks(ppqn, tempo, mtracks, title, author) {
-    const pretrack = [];
-    pushAscii(pretrack, 'MThd');
-    pushUint32(pretrack, 6);
-    pushUint16(pretrack, 1);
-    pushUint16(pretrack, mtracks.length);
-    pushUint16(pretrack, ppqn);
-
-    let wholetrack = [...pretrack];
     const tempoMicros = 1000000 * 60 / tempo;
-    let pretrackOutput = false;
-    const meta = [];
+    const meta = new MidiByteWriter(64 + (title ? title.length : 0) + (author ? author.length : 0));
     if (title) {
-      pushBytes(meta, 0, 0xFF, 0x03);
-      pushVarLen(meta, title.length);
-      pushAscii(meta, title);
+      meta.pushBytes(0, 0xFF, 0x03);
+      meta.pushVarLen(title.length);
+      meta.pushAscii(title);
     }
     if (author) {
-      pushBytes(meta, 0, 0xFF, 0x02);
-      pushVarLen(meta, author.length);
-      pushAscii(meta, author);
+      meta.pushBytes(0, 0xFF, 0x02);
+      meta.pushVarLen(author.length);
+      meta.pushAscii(author);
     }
-    pushBytes(meta, 0, 0xFF, 1, VERSION.length);
-    pushAscii(meta, VERSION);
-    pushBytes(meta, 0, 0xFF, 0x51, 3, (tempoMicros >> 16) & 0xFF, (tempoMicros >> 8) & 0xFF, tempoMicros & 0xFF);
+    meta.pushBytes(0, 0xFF, 1, VERSION.length);
+    meta.pushAscii(VERSION);
+    meta.pushBytes(0, 0xFF, 0x51, 3, (tempoMicros >> 16) & 0xFF, (tempoMicros >> 8) & 0xFF, tempoMicros & 0xFF);
+    const metaBytes = meta.toUint8Array();
 
-    for (const mtrack of mtracks) {
-      if (!pretrackOutput) {
-        const first = meta.concat(mtrack);
-        pushAscii(wholetrack, 'MTrk');
-        pushUint32(wholetrack, first.length);
-        wholetrack = wholetrack.concat(first);
-        pretrackOutput = true;
-      } else {
-        pushAscii(wholetrack, 'MTrk');
-        pushUint32(wholetrack, mtrack.length);
-        wholetrack = wholetrack.concat(mtrack);
+    let totalLength = 14;
+    for (let i = 0; i < mtracks.length; i += 1) totalLength += 8 + mtracks[i].length + (i === 0 ? metaBytes.length : 0);
+
+    const wholetrack = new MidiByteWriter(totalLength);
+    wholetrack.pushAscii('MThd');
+    wholetrack.pushUint32(6);
+    wholetrack.pushUint16(1);
+    wholetrack.pushUint16(mtracks.length);
+    wholetrack.pushUint16(ppqn);
+
+    for (let i = 0; i < mtracks.length; i += 1) {
+      const mtrack = mtracks[i];
+      const metaLength = i === 0 ? metaBytes.length : 0;
+      wholetrack.pushAscii('MTrk');
+      wholetrack.pushUint32(metaLength + mtrack.length);
+      if (metaLength) wholetrack.appendBytes(metaBytes);
+      wholetrack.appendBytes(mtrack);
+    }
+    return wholetrack.toUint8Array();
+  }
+
+  class MidiByteWriter {
+    constructor(capacity) {
+      this.buffer = new Uint8Array(Math.max(16, Math.trunc(capacity) || 16));
+      this.length = 0;
+    }
+
+    ensure(extra) {
+      const needed = this.length + extra;
+      if (needed <= this.buffer.length) return;
+      let capacity = this.buffer.length;
+      while (capacity < needed) capacity *= 2;
+      const next = new Uint8Array(capacity);
+      next.set(this.buffer, 0);
+      this.buffer = next;
+    }
+
+    pushByte(value) {
+      this.ensure(1);
+      this.buffer[this.length] = Math.trunc(value) & 0xFF;
+      this.length += 1;
+    }
+
+    pushBytes() {
+      this.ensure(arguments.length);
+      for (let i = 0; i < arguments.length; i += 1) {
+        this.buffer[this.length] = Math.trunc(arguments[i]) & 0xFF;
+        this.length += 1;
       }
     }
-    return new Uint8Array(wholetrack);
-  }
 
-  function pushBytes(out, ...bytes) {
-    for (const byte of bytes) out.push(Math.trunc(byte) & 0xFF);
-  }
-
-  function pushAscii(out, text) {
-    for (let i = 0; i < text.length; i += 1) out.push(text.charCodeAt(i) & 0xFF);
-  }
-
-  function pushUint16(out, value) {
-    value = Math.trunc(value);
-    out.push((value >> 8) & 0xFF, value & 0xFF);
-  }
-
-  function pushUint32(out, value) {
-    value = Math.trunc(value);
-    out.push((value >>> 24) & 0xFF, (value >>> 16) & 0xFF, (value >>> 8) & 0xFF, value & 0xFF);
-  }
-
-  function pushVarLen(out, value) {
-    value = Math.trunc(value);
-    if (!Number.isFinite(value) || value < 0) throw new Error(`Musicpad error: invalid MIDI delta ${value}`);
-    let buffer = value & 0x7F;
-    while ((value >>= 7)) {
-      buffer <<= 8;
-      buffer |= ((value & 0x7F) | 0x80);
+    pushAscii(text) {
+      this.ensure(text.length);
+      for (let i = 0; i < text.length; i += 1) {
+        this.buffer[this.length] = text.charCodeAt(i) & 0xFF;
+        this.length += 1;
+      }
     }
-    while (true) {
-      out.push(buffer & 0xFF);
-      if (buffer & 0x80) buffer >>= 8;
-      else break;
+
+    pushUint16(value) {
+      value = Math.trunc(value);
+      this.ensure(2);
+      this.buffer[this.length] = (value >> 8) & 0xFF;
+      this.buffer[this.length + 1] = value & 0xFF;
+      this.length += 2;
+    }
+
+    pushUint32(value) {
+      value = Math.trunc(value);
+      this.ensure(4);
+      this.buffer[this.length] = (value >>> 24) & 0xFF;
+      this.buffer[this.length + 1] = (value >>> 16) & 0xFF;
+      this.buffer[this.length + 2] = (value >>> 8) & 0xFF;
+      this.buffer[this.length + 3] = value & 0xFF;
+      this.length += 4;
+    }
+
+    pushVarLen(value) {
+      value = Math.trunc(value);
+      if (!Number.isFinite(value) || value < 0) throw new Error(`Musicpad error: invalid MIDI delta ${value}`);
+      let buffer = value & 0x7F;
+      while ((value >>= 7)) {
+        buffer <<= 8;
+        buffer |= ((value & 0x7F) | 0x80);
+      }
+      while (true) {
+        this.pushByte(buffer & 0xFF);
+        if (buffer & 0x80) buffer >>= 8;
+        else break;
+      }
+    }
+
+    appendBytes(bytes) {
+      this.ensure(bytes.length);
+      this.buffer.set(bytes, this.length);
+      this.length += bytes.length;
+    }
+
+    toUint8Array() {
+      return this.buffer.slice(0, this.length);
     }
   }
 

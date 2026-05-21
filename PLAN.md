@@ -69,6 +69,41 @@ Goal: refactor Musicpad so parsing/interpreting produces a rich internal represe
 - [x] Add `Download → MusicXML (.musicxml)` only after automated XML tests pass.
 - [ ] Verify with external score rendering (MuseScore or equivalent) when available.
 
+### M6: Focused musicpad.js optimization pass
+Goal: reduce time and memory use in `src/musicpad.js` without changing public APIs or generated MIDI/MusicXML semantics. Do the work in small, independently verifiable steps.
+
+#### Baseline before changes
+- [x] Record current benchmark numbers for representative cases: full `node tests/musicpad.test.js`, plus per-song IR/MIDI/MusicXML timings for large songs (`melo1.mpd`, `Meshuggah - War.mpd`, `Polyfun1.mpd`, `Polyfun2.mpd`).
+- [x] Preserve current regression checks: MIDI byte lengths/hashes, IR-to-MIDI equality, MusicXML measure-duration tests.
+
+#### Step 1 — Cache MusicXML duration decompositions
+- [x] Add a small cache around `musicXmlDurationComponents(duration)` keyed by rounded tick duration.
+- [x] Ensure callers cannot mutate cached arrays/components in a way that affects later output; clone cached components if needed.
+- [x] Verify with `node tests/musicpad.test.js` and compare before/after MusicXML timing for large songs.
+
+#### Step 2 — Replace MIDI array/concat writer with byte writer
+- [x] Introduce a minimal byte writer/chunk writer for MIDI output in `irTrackToMidiTrack()` and `midiBytesFromTracks()`.
+- [x] Avoid repeated `Array.concat()` and rest-parameter `pushBytes(...bytes)` in hot paths.
+- [x] Keep exact MIDI bytes stable for all existing hash fixtures.
+- [x] Verify memory/time improvements with the same baseline commands.
+
+#### Step 3 — Optimize MusicXML measure lookup
+- [x] Replace linear `musicXmlMeasureIndexForTick()` scans with binary search or a monotonic cursor for sorted events.
+- [x] Keep meter/key change handling and measure padding behavior unchanged.
+- [x] Verify MusicXML measure counts and durations for all song fixtures.
+
+#### Step 4 — Avoid unnecessary per-measure sorting
+- [x] Check whether generated measure segments are already appended in stable tick/source order.
+- [x] Remove or gate per-measure `.sort()` only when ordering is proven stable.
+- [x] Add/keep a focused regression for same-tick non-note events and note/rest ordering if needed.
+- [x] Verify full tests and benchmark large MusicXML exports.
+
+#### Acceptance criteria
+- [x] `node tests/musicpad.test.js` passes.
+- [x] Existing MIDI hashes and lengths are unchanged.
+- [x] MusicXML output remains structurally valid under current tests.
+- [x] A short before/after timing summary is reported before committing.
+
 ## Risks
 - **Variable-length MIDI encoding**: must match Perl `pack 'w'` exactly.
 - **Chord parsing edge cases**: the Perl regex logic is intricate; need careful testing.
@@ -77,6 +112,7 @@ Goal: refactor Musicpad so parsing/interpreting produces a rich internal represe
 - **MusicXML mismatch risk**: Musicpad is playback-oriented while MusicXML is score-oriented; preserve both performance data and notation intent in the IR.
 - **Semantic loss risk**: A MIDI-like event list loses `[g:Am]`, strum, note spelling, explicit dynamics, and other score intent; do not build MusicXML from MIDI bytes or note-ons alone.
 - **Notation layout choices**: Musicpad has no required barlines/time signatures; MusicXML export will need explicit defaults and may require later user-facing options.
+- **Optimization regressions**: byte-writer and MusicXML ordering changes can silently alter output; keep each optimization isolated and run hash/measure regressions after every step.
 
 ## Decision Log
 - 2026-05-12: Port 1:1 from Perl, preserving all notation features
@@ -88,6 +124,8 @@ Goal: refactor Musicpad so parsing/interpreting produces a rich internal represe
 - 2026-05-17: Plan MusicXML around a reusable interpreted event model rather than a separate parser, so exports represent what Musicpad plays.
 - 2026-05-17: Discarded a first MusicXML attempt because it was too MIDI-like and lost notation intent such as guitar chord identity, strum, and explicit dynamics.
 - 2026-05-17: New M5 order is IR first, MIDI-from-IR second, MusicXML third.
+- 2026-05-20: First `musicpad.js` optimization pass will focus on four low-to-medium-risk targets: MusicXML duration caching, MIDI byte writer, MusicXML measure lookup, and avoiding unnecessary per-measure sorting.
+- 2026-05-20: Remove unused legacy direct-MIDI methods from `MusicpadEngine`; current app uses top-level APIs through the IR path.
 
 ## Next Step
-Verify MusicXML with an external score renderer (MuseScore or equivalent) when available, then decide whether to polish notation defaults before committing. Do not update deployment/generated copies such as `docs/index.html` unless explicitly requested.
+Next session: review diffs and decide whether to commit `src/musicpad.js`, `PLAN.md`, `STATE.md`, and `journal/2026-05-20-optimization-plan.md` as one commit or split optimization/cleanup commits. `src/musicpad.html` has been rebuilt and remains ignored; leave `old/` and `xxx/` untouched unless explicitly requested.
