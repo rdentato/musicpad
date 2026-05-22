@@ -128,4 +128,4 @@ Goal: reduce time and memory use in `src/musicpad.js` without changing public AP
 - 2026-05-20: Remove unused legacy direct-MIDI methods from `MusicpadEngine`; current app uses top-level APIs through the IR path.
 
 ## Next Step
-Next session: review diffs and decide whether to commit `src/musicpad.js`, `PLAN.md`, `STATE.md`, and `journal/2026-05-20-optimization-plan.md` as one commit or split optimization/cleanup commits. `src/musicpad.html` has been rebuilt and remains ignored; leave `old/` and `xxx/` untouched unless explicitly requested.
+M6 is complete and pushed in `bdc5fb7 Optimizatins`; `src/musicpad.html` was rebuilt and remains ignored. Next scoped options: verify MusicXML with an external renderer, automate benchmark timing for future optimization work, or address the pushed commit-message typo only with explicit approval for the required history rewrite. Leave `old/` and `xxx/` untouched unless explicitly requested.
