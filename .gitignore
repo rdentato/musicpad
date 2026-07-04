@@ -3,3 +3,7 @@
 
 # Built single-file app
 src/musicpad.html
+
+# Maintainer local directories
+old/
+xxx/

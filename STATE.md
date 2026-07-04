@@ -4,23 +4,24 @@
 main
 
 ## Active Task
-M6 optimization pass plus direct-MIDI cleanup are implemented, verified, committed, and pushed; project is ready for the next scoped task.
+Non-gated `BUG-TO-FIX.md` batch is implemented and verified; no active implementation task remains.
 
 ## Last Stop
-Confirmed tracked source changes were already committed and pushed as `bdc5fb7 Optimizatins`, touching `src/musicpad.js`, `PLAN.md`, and `STATE.md`. `journal/2026-05-20-optimization-plan.md` remained untracked and should be committed with this state refresh. `old/` and `xxx/` remain untracked and untouched.
+Fixed engine parser/validation bugs, app-shell playback/status issues, UTF-8 MIDI title/author meta encoding, README typos/example drums, and `.gitignore` entries for maintainer-local `old/` and `xxx/`. Ran `bash src/build`, refreshed `docs/index.html` from `src/musicpad.html`, confirmed they match, and `node tests/musicpad.test.js` passes. Gated MAJ7/AUG compatibility changes were not implemented.
 
 ## Open Questions
-1. Should the pushed typo commit message `Optimizatins` be left as-is, or amended with explicit approval for the required force-push?
-2. Should benchmarking become an automated script before deeper parser optimizations?
-3. Should external MusicXML rendering verification be the next validation task?
+1. Should a browser smoke test be run manually for editor playback, tutorial volume preservation, and cross-page error visibility?
+2. Should external MusicXML rendering verification be the next validation task?
+3. Should the pushed typo commit message `Optimizatins` be left as-is, or amended only with explicit approval for the required force-push?
 
 ## Last Decision
-Treat M6 as complete after confirming `bdc5fb7` is already pushed; refresh state/plan and commit the detailed optimization journal separately.
+Leave the gated MAJ7/AUG interval changes untouched because they alter byte compatibility and require explicit maintainer approval.
 
 ## Pointers
-- PLAN.md M5/M6
-- journal/2026-05-20-optimization-plan.md
-- M6 implementation commit: `bdc5fb7 Optimizatins`
-- src/musicpad.js (`musicXmlDurationComponents`, `irTrackToMidiTrack`, `midiBytesFromTracks`, `musicXmlMeasureIndexForTick`, per-measure segment sorting)
+- BUG-TO-FIX.md non-gated tasks
+- PLAN.md Decision Log
+- journal/2026-07-04-bug-fixes.md
+- src/musicpad.js
+- src/musicpad-html.html
 - tests/musicpad.test.js
-- project-docs/songs/*.mpd
+- docs/index.html rebuilt from src/musicpad.html

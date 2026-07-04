@@ -306,10 +306,14 @@
     }
 
     #status {
-      margin-top: 0.65rem;
+      margin: -0.25rem 0 0.75rem;
       min-height: 1.5rem;
       color: var(--muted);
       font-size: 0.95rem;
+    }
+
+    #status:empty {
+      display: none;
     }
 
     .doc-content {
@@ -484,6 +488,8 @@
       </div>
     </div>
 
+    <div id="status" role="status" aria-live="polite"></div>
+
     <section id="editorPage" class="page active" aria-label="Editor">
       <textarea id="source" spellcheck="false"># My Bloody Valentine, When you sleep
 
@@ -514,7 +520,6 @@ m$bar1 ( |0 $flute | $bd1 | $sd1 | $oh1 | $bass | $guit | $guit | $guit )
 m$bar2 ( |0 $flute | $bd1 | $sd2 | $oh2 | $bass | $guit | $guit | $guit )
 
 $intro ($bar2 $bar1)*2</textarea>
-      <div id="status" role="status" aria-live="polite"></div>
     </section>
 
     <!-- MUSICPAD_DOCS -->
@@ -1495,7 +1500,6 @@ $intro ($bar2 $bar1)*2</textarea>
       button.addEventListener('click', () => {
         if (activeExampleButton === button && currentPlayer) stopPlayback('Playback stopped.');
         else {
-          setPlaybackVolume(1);
           playMusicpadSource(example.textContent.trim(), `tutorial example ${index + 1}`, button);
         }
       });

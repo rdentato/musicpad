@@ -2,7 +2,7 @@
 
 Musicpad is a compact text notation  created by Loïc Prot. It is intended for writing musical ideas and generating MIDI files. It lets you describe notes, rhythms, pauses, chords, tracks, instruments, drums, macros, repeats, and expressive MIDI controls using plain text.
 
-This repository contains a JavaScript port of Musicpad. It runs locally in the browser, it plays back Musicpad notation and converts it into downloadable MIDI files without requiring a server. Just downaload the HTML file on your PC and open it.
+This repository contains a JavaScript port of Musicpad. It runs locally in the browser, it plays back Musicpad notation and converts it into downloadable MIDI files without requiring a server. Just download the HTML file on your PC and open it.
 
 ## Features
 
@@ -27,8 +27,8 @@ Example:
 ```text
 tempo120
 ch1 iAcousticGrandPiano C E G C5
-| ch2 iBassDrum o/16 x---x---
-| ch10 iSnareDrum o/16 ----x---
+| iBassDrum o/16 x---x---
+| iSnareDrum o/16 ----x---
 ```
 
 ## JavaScript port

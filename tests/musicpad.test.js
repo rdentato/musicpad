@@ -135,6 +135,19 @@ function seededRng(seed) {
   };
 }
 
+function assertMusicpadError(fn, includes, label) {
+  assert.throws(fn, (error) => {
+    assert(error.message.startsWith('Musicpad error: '), `${label}: missing Musicpad error prefix`);
+    const expected = Array.isArray(includes) ? includes : [includes];
+    for (const text of expected) assert(error.message.includes(text), `${label}: missing ${text} in ${error.message}`);
+    return true;
+  }, label);
+}
+
+function noteGroups(ir) {
+  return ir.tracks.flatMap((track) => track.events.filter((event) => event.kind === 'noteGroup'));
+}
+
 function assertDeepIncludes(actual, expected, label) {
   if (Array.isArray(expected)) {
     assert(Array.isArray(actual), `${label}: expected an array`);
@@ -336,6 +349,66 @@ function testMusicXmlExport() {
   assert.deepStrictEqual(musicXmlPartMeasureCounts(paddedParts), [2, 2], 'MusicXML: shorter parts should be padded to the global measure count');
 }
 
+function testEngineBugFixes() {
+  assertMusicpadError(() => musicpadToMidi('m$a( (c e'), 'matching (/) error', 'unbalanced macro parens should error');
+
+  const looseMidi = musicpadToMidi('tempo120 loose100 c d e', { rng: () => 0.5 });
+  assertValidMidi(looseMidi, 'loose without quality');
+  const velvarIr = musicpadToIr('tempo120 velvar20 c d e', { rng: () => 0.5 });
+  assert(noteGroups(velvarIr).every((event) => event.velocity > 0), 'velvar without quality should keep audible velocities');
+
+  assert.strictEqual(noteGroups(musicpadToIr('tempo120 (c e)*2*3', { rng: () => 0.5 })).length, 12, 'chained group repeats should multiply');
+  assert.strictEqual(noteGroups(musicpadToIr('tempo120 c*2*3', { rng: () => 0.5 })).length, 6, 'chained token repeats should multiply');
+
+  assert.deepStrictEqual(noteGroups(musicpadToIr('tempo120 [F#m]/4', { rng: () => 0.5 }))[0].midiPitches, [54, 57, 61], 'short minor chord alias should work');
+  assert.deepStrictEqual(noteGroups(musicpadToIr('tempo120 [Am7]/4', { rng: () => 0.5 }))[0].midiPitches, [57, 60, 64, 67], 'short minor seventh alias should work');
+
+  const titleIr = musicpadToIr('title"my #1 hit" tempo120 c', { rng: () => 0.5 });
+  assert.strictEqual(titleIr.title, 'my #1 hit', 'title extraction should preserve # inside quotes');
+  assert.strictEqual(noteGroups(musicpadToIr('tempo120 # comment\n c', { rng: () => 0.5 })).length, 1, 'line comments should still strip');
+
+  assertMusicpadError(() => musicpadToIr('tempo120 iPiano c'), ['I don\'t know instrument Piano', 'track 0', 'token "iPiano"'], 'unknown i-command should error with token context');
+  for (const source of ['tempo120 i25 c', 'tempo120 iBD x', 'tempo120 iAcousticGrandPiano c', 'tempo120 iSnareDrum x']) {
+    assert(noteGroups(musicpadToIr(source, { rng: () => 0.5 })).length > 0, `${source}: valid instrument should still parse`);
+  }
+
+  assertMusicpadError(() => musicpadToIr('tempo120 ch0 c'), 'channel must be 1..16, got 0', 'channel zero should error');
+  assertMusicpadError(() => musicpadToIr('tempo120 ch17 c'), 'channel must be 1..16, got 17', 'channel overflow should error');
+  assertMusicpadError(() => musicpadToIr('tempo120 nt+12c'), 'nt transpose takes a single digit', 'multi-digit nt+ should error');
+  assertMusicpadError(() => musicpadToIr('tempo0 c'), 'tempo must be >= 1, got 0', 'zero tempo should error');
+  assertMusicpadError(() => musicpadToIr('resolution40000 c'), 'resolution must be 1..32767 ppqn, got 40000', 'SMPTE-like resolution should error');
+
+  assertMusicpadError(() => musicpadToIr('tempo120 [Xfoo]/4'), ['I don\'t know chord Xfoo', 'track 0', 'token "[Xfoo]/4"'], 'bad chord should carry token context');
+  assertMusicpadError(() => musicpadToIr('tempo120 tuning[foo] c'), ['tuning definition problem', 'track 0', 'token "tuning[foo]"'], 'bad tuning should carry token context');
+}
+
+function testDashRestDisambiguation() {
+  const compact = musicpadToIr('tempo120 F---  G', { rng: () => 0.5 }).tracks[0].events;
+  assert.deepStrictEqual(compact.map((event) => event.kind === 'noteGroup' ? event.midiPitches[0] : 'rest'), [52, 'rest', 'rest', 55], 'F--- should be F-flat plus two rests');
+
+  const spaced = musicpadToIr('tempo120 F --- G', { rng: () => 0.5 }).tracks[0].events;
+  assert.deepStrictEqual(spaced.map((event) => event.kind === 'noteGroup' ? event.midiPitches[0] : 'rest'), [53, 'rest', 'rest', 'rest', 55], 'F --- should be F-natural plus three rests');
+
+  assert.strictEqual(musicpadToIr('tempo120 pitch-50 c', { rng: () => 0.5 }).tracks[0].events[0].kind, 'pitchBend', 'pitch- should stay attached');
+  assert.deepStrictEqual(noteGroups(musicpadToIr('tempo120 n-3 c', { rng: () => 0.5 })).map((event) => event.midiPitches[0]), [62, 48], 'n- should stay attached');
+  assert.deepStrictEqual(noteGroups(musicpadToIr('tempo120 t-2 c', { rng: () => 0.5 }))[0].midiPitches, [46], 't- should stay attached');
+  assert.deepStrictEqual(noteGroups(musicpadToIr('tempo120 [g:-,0,2,2,2,0]/4', { rng: () => 0.5 }))[0].midiPitches, [45, 52, 57, 61, 64], 'guitar fret rests should stay attached inside brackets');
+
+  const softHit = musicpadToIr('tempo120 o/32 -,x', { rng: () => 0.5 }).tracks[0].events;
+  assert.strictEqual(softHit[0].kind, 'rest', 'dash before ,x should remain a rest');
+  assert.strictEqual(softHit[1].sourceToken, ',x', ',x should still merge after a rest');
+  assert.strictEqual(softHit[1].notation.soft, true, ',x should remain a softened hit');
+}
+
+function testUtf8TitleMeta() {
+  const title = 'héllo';
+  const midi = musicpadToMidi(`title"${title}" tempo120 c`, { rng: () => 0.5 });
+  const track = Buffer.from(firstMidiTrackBody(midi));
+  const titleBytes = Buffer.from(title, 'utf8');
+  const expectedMeta = Buffer.from([0x00, 0xFF, 0x03, titleBytes.length, ...titleBytes]);
+  assert.deepStrictEqual(track.slice(0, expectedMeta.length), expectedMeta, 'UTF-8 title should emit byte length and UTF-8 bytes');
+}
+
 function testMusicXmlStarwaysMeasures() {
   const source = fs.readFileSync(path.join(SONGS_DIR, 'Starways to Heaven.mpd'), 'utf8');
   const xml = musicpadToMusicXml(source, { rng: () => 0.5 });
@@ -423,6 +496,9 @@ function main() {
   testIrFixtures();
   testMidiFromIrFixtures();
   testMidiFromIrHumanization();
+  testEngineBugFixes();
+  testDashRestDisambiguation();
+  testUtf8TitleMeta();
   testMusicXmlExport();
   testMusicXmlStarwaysMeasures();
   testMusicXmlSongsHaveFilledMeasures();

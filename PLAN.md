@@ -6,7 +6,7 @@ Create a Musicpad web application that lets users write in Musicpad Notation, th
 The app is delivered as a generated single self-contained `src/musicpad.html`. Build inputs are `src/musicpad-html.html`, `src/musicpad.js`, `src/songlist.js`, and `src/A320U.sf2`; `src/build` assembles the generated HTML.
 
 ## Status
-Complete. MIDI generation, browser playback, and build-source split are committed and pushed.
+Complete. MIDI generation, browser WebAudio playback, and build-source split are committed and pushed. Direct browser MIDI output access is postponed to a future release.
 
 ## Milestones
 
@@ -126,6 +126,8 @@ Goal: reduce time and memory use in `src/musicpad.js` without changing public AP
 - 2026-05-17: New M5 order is IR first, MIDI-from-IR second, MusicXML third.
 - 2026-05-20: First `musicpad.js` optimization pass will focus on four low-to-medium-risk targets: MusicXML duration caching, MIDI byte writer, MusicXML measure lookup, and avoiding unnecessary per-measure sorting.
 - 2026-05-20: Remove unused legacy direct-MIDI methods from `MusicpadEngine`; current app uses top-level APIs through the IR path.
+- 2026-05-22: Postpone direct browser MIDI output/Web MIDI access to a future release; keep WebAudio playback and MIDI file downloads as the supported current paths.
+- 2026-07-04: Implemented the non-gated `BUG-TO-FIX.md` batch: parser hardening, validation, dash/rest disambiguation, short minor chord aliases, app-shell playback/status fixes, UTF-8 MIDI meta text, README fixes, and ignoring maintainer-local `old/`/`xxx/` directories. Gated MAJ7/AUG compatibility changes remain untouched.
 
 ## Next Step
-M6 is complete and pushed in `bdc5fb7 Optimizatins`; `src/musicpad.html` was rebuilt and remains ignored. Next scoped options: verify MusicXML with an external renderer, automate benchmark timing for future optimization work, or address the pushed commit-message typo only with explicit approval for the required history rewrite. Leave `old/` and `xxx/` untouched unless explicitly requested.
+Bug batch is implemented and verified with `node tests/musicpad.test.js`; generated `docs/index.html` matches rebuilt `src/musicpad.html`. Remaining optional validation is a browser smoke test for editor playback, tutorial volume preservation, and cross-page error visibility. Leave `old/` and `xxx/` untouched.

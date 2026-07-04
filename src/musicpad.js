@@ -1198,6 +1198,11 @@ CB 56 Cowbell
     '11:5': [0, 4, -5, -2, 2, 5]
   };
 
+  for (const [name, value] of Object.entries(KEY_CHORDS)) {
+    const alias = name.replace(/^MIN/, 'M');
+    if (alias !== name && KEY_CHORDS[alias] == null) KEY_CHORDS[alias] = value;
+  }
+
   const NUMBER_LIST_CACHE = new Map();
   const GUITAR_FRET_CACHE = new Map();
   const MUSIC_XML_DURATION_VALUES = [
@@ -1338,6 +1343,15 @@ CB 56 Cowbell
       if (source == null) source = 'c e g g+';
 
       this.string = ` ${String(source)} \n`;
+      let match;
+      if ((match = this.string.match(/\btitle"([^"]*)"/i))) {
+        this.title = match[1];
+        this.string = this.string.replace(/\btitle"([^"]*)"/i, '');
+      }
+      if ((match = this.string.match(/\bauthor"([^"]*)"/i))) {
+        this.author = match[1];
+        this.string = this.string.replace(/\bauthor"([^"]*)"/i, '');
+      }
       this.string = this.string.replace(/\s#.*\n/g, ' \n ');
       this.string = this.string.replace(/\s#.*\n/g, ' \n ');
 
@@ -1361,16 +1375,9 @@ CB 56 Cowbell
         this.debug = 1;
         this.string = this.string.replace('dEbUg', '');
       }
-      if ((match = this.string.match(/\btitle"([^"]*)"/i))) {
-        this.title = match[1];
-        this.string = this.string.replace(/\btitle"([^"]*)"/i, '');
-      }
-      if ((match = this.string.match(/\bauthor"([^"]*)"/i))) {
-        this.author = match[1];
-        this.string = this.string.replace(/\bauthor"([^"]*)"/i, '');
-      }
       if ((match = this.string.match(/tempo(\d+)/i))) {
         this.tempo = Number(match[1]);
+        if (this.tempo < 1) this.error(`tempo must be >= 1, got ${this.tempo}`);
         this.string = this.string.replace(/tempo(\d+)/i, '');
       }
       if ((match = this.string.match(/resolution(\d+)/i))) {
@@ -1380,6 +1387,7 @@ CB 56 Cowbell
         else if (mode === 2) this.ppqn = 384;
         else if (mode === 3) this.ppqn = 1536;
         else this.ppqn = mode;
+        if (this.ppqn < 1 || this.ppqn > 32767) this.error(`resolution must be 1..32767 ppqn, got ${this.ppqn}`);
         this.string = this.string.replace(/resolution(\d+)/i, '');
       }
       if ((match = this.string.match(/duty(\d+)/i))) {
@@ -1415,8 +1423,9 @@ CB 56 Cowbell
       while ((macpos = this.string.indexOf('m$')) !== -1) {
         foundmacro = true;
         const macstart = this.string.indexOf('(', macpos);
-        if (macstart === -1) this.error('macro definition missing opening parenthesis');
+        if (macstart === -1) this.error('macro definition missing opening parenthesis', this.sourceContext(this.string, macpos));
         const macend = this.getBound(this.string, macstart, '(', ')');
+        if (macend === -1) this.error('matching (/) error', this.sourceContext(this.string, macstart));
         const key = this.string.slice(macpos + 2, macstart).replace(/\s+/g, '');
         macro[key] = ` ${this.string.slice(macstart, macend + 1)} `;
         this.string = this.string.slice(0, macpos) + this.string.slice(macend + 1);
@@ -1426,8 +1435,9 @@ CB 56 Cowbell
       while ((macpos = this.string.indexOf('mrnd$')) !== -1) {
         foundmacro = true;
         const macstart = this.string.indexOf('(', macpos);
-        if (macstart === -1) this.error('random macro definition missing opening parenthesis');
+        if (macstart === -1) this.error('random macro definition missing opening parenthesis', this.sourceContext(this.string, macpos));
         const macend = this.getBound(this.string, macstart, '(', ')');
+        if (macend === -1) this.error('matching (/) error', this.sourceContext(this.string, macstart));
         const key = this.string.slice(macpos + 5, macstart).replace(/\s+/g, '');
         macrornd[key] = this.string.slice(macstart + 1, macend).replace(/^\s+/, '').replace(/\s+$/, '');
         this.string = this.string.slice(0, macpos) + this.string.slice(macend + 1);
@@ -1438,13 +1448,13 @@ CB 56 Cowbell
       let amokcount = 0;
       while (expSomething) {
         expSomething = false;
-        if (500 < amokcount++) this.error('macro expansion ran amok. self-reference?');
+        if (500 < amokcount++) this.error('macro expansion ran amok. self-reference?', this.sourceContext(this.string, 0));
         this.expandMul();
         this.string = compactSpaces(this.string);
         if (foundmacro) {
-          this.string = this.string.replace(/\$([a-z0-9\-_]+)/gi, (_all, name) => {
+          this.string = this.string.replace(/\$([a-z0-9\-_]+)/gi, (_all, name, offset) => {
             expSomething = true;
-            if (macro[name] == null && macrornd[name] == null) this.error(`macro ${name} not defined`);
+            if (macro[name] == null && macrornd[name] == null) this.error(`macro ${name} not defined`, this.sourceContext(this.string, offset));
             return this.writeMac(name, macro, macrornd);
           });
         }
@@ -1458,7 +1468,7 @@ CB 56 Cowbell
         const choices = macrornd[which].split(/\s+/).filter(Boolean);
         return choices[Math.floor(this.rng() * choices.length)];
       }
-      this.error(`strange, I can't find macro ${which} !!!`);
+      this.error(`strange, I can't find macro ${which} !!!`, this.sourceContext(this.string, 0));
     }
 
     expandMul() {
@@ -1467,14 +1477,29 @@ CB 56 Cowbell
         let pre = this.string.slice(0, starpos);
         let post = this.string.slice(starpos + 1);
 
+        const repeatContext = this.sourceContext(this.string, starpos);
         let factorStart = 0;
         while (factorStart < post.length && /\s/.test(post[factorStart])) factorStart += 1;
         let factorEnd = factorStart;
-        while (factorEnd < post.length && /[\d.*]/.test(post[factorEnd])) factorEnd += 1;
-        if (factorEnd === factorStart) this.error("illegal repeat: can't find factor");
-        const rpt = parseInt(post.slice(factorStart, factorEnd), 10);
-        if (!Number.isFinite(rpt) || rpt < 0) this.error('illegal repeat factor');
+        while (factorEnd < post.length && isDigitCode(post.charCodeAt(factorEnd))) factorEnd += 1;
+        if (factorEnd === factorStart) this.error("illegal repeat: can't find factor", repeatContext);
+        let rpt = parseInt(post.slice(factorStart, factorEnd), 10);
+        if (!Number.isFinite(rpt) || rpt < 0) this.error('illegal repeat factor', repeatContext);
         post = post.slice(factorEnd);
+        while (true) {
+          let nextStar = 0;
+          while (nextStar < post.length && /\s/.test(post[nextStar])) nextStar += 1;
+          if (post[nextStar] !== '*') break;
+          let nextFactorStart = nextStar + 1;
+          while (nextFactorStart < post.length && /\s/.test(post[nextFactorStart])) nextFactorStart += 1;
+          let nextFactorEnd = nextFactorStart;
+          while (nextFactorEnd < post.length && isDigitCode(post.charCodeAt(nextFactorEnd))) nextFactorEnd += 1;
+          if (nextFactorEnd === nextFactorStart) break;
+          const nextRpt = parseInt(post.slice(nextFactorStart, nextFactorEnd), 10);
+          if (!Number.isFinite(nextRpt) || nextRpt < 0) this.error('illegal repeat factor', repeatContext);
+          rpt *= nextRpt;
+          post = post.slice(nextFactorEnd);
+        }
 
         let what;
         let preEnd = pre.length - 1;
@@ -1490,7 +1515,7 @@ CB 56 Cowbell
           while (tokenEnd >= 0 && /\s/.test(pre[tokenEnd])) tokenEnd -= 1;
           let tokenStart = tokenEnd;
           while (tokenStart >= 0 && !/\s/.test(pre[tokenStart])) tokenStart -= 1;
-          if (tokenEnd < 0 || tokenStart < 0) this.error("illegal repeat: can't find what to repeat");
+          if (tokenEnd < 0 || tokenStart < 0) this.error("illegal repeat: can't find what to repeat", repeatContext);
           what = pre.slice(tokenStart + 1, tokenEnd + 1);
           pre = pre.slice(0, tokenStart);
         }
@@ -1546,9 +1571,12 @@ CB 56 Cowbell
       let previousnotetime = 0;
       const events = [];
 
-      const values = tokenizeTrackSource(trackSource);
-      for (let command of values) {
+      const previousErrorContext = this.currentErrorContext;
+      try {
+        const values = tokenizeTrackSource(trackSource);
+        for (let command of values) {
         const sourceToken = command;
+        this.currentErrorContext = { trackIndex, sourceToken };
         let notation = {};
         let pause = 0;
         let stress = 0;
@@ -1684,14 +1712,18 @@ CB 56 Cowbell
         }
         if (lower.startsWith('loose')) {
           const parts = command.slice(5).split(',');
-          loosew = this.timeToTick(Number(parts[0]));
-          looseq = parts[1];
+          const width = Number(parts[0]);
+          if (!Number.isFinite(width)) this.error(`invalid loose width ${parts[0]}`);
+          loosew = this.timeToTick(width);
+          looseq = parts[1] == null || parts[1] === '' ? 1 : parts[1];
           continue;
         }
         if (lower.startsWith('velvar')) {
           const parts = command.slice(6).split(',');
-          velvarw = Number(parts[0]);
-          velvarq = parts[1];
+          const width = Number(parts[0]);
+          if (!Number.isFinite(width)) this.error(`invalid velvar width ${parts[0]}`);
+          velvarw = width;
+          velvarq = parts[1] == null || parts[1] === '' ? 1 : parts[1];
           continue;
         }
         if (lower.startsWith('ctrl')) {
@@ -1725,7 +1757,9 @@ CB 56 Cowbell
         }
 
         if (lower.startsWith('ch') && hasDigit(command)) {
-          chan = (Number(command.slice(2)) - 1) & 0xF;
+          const channel = Number(command.slice(2));
+          if (!Number.isFinite(channel) || channel < 1 || channel > 16) this.error(`channel must be 1..16, got ${channel}`);
+          chan = channel - 1;
           continue;
         }
         if (lower[0] === 'i' && isDigitCode(lower.charCodeAt(1))) {
@@ -1752,7 +1786,7 @@ CB 56 Cowbell
             continue;
           }
         }
-        if (lower[0] === 'i' && command.length >= 3) {
+        if (lower[0] === 'i' && command.length > 1) {
           const drumCode = command.slice(1, 3).toUpperCase();
           const drum = DRUM_MAP[drumCode];
           if (drum != null) {
@@ -1760,14 +1794,17 @@ CB 56 Cowbell
             chan = (10 - 1) & 0xF;
             chord = [note];
             events.push({ kind: 'drumInstrument', sourceToken, tick: round(abstime), channel: chan, drumCode, midiPitch: note });
+            continue;
           }
-          continue;
+          this.error(`I don't know instrument ${command.slice(1)}`);
         }
         if (lower.startsWith('nt+') && isDigitCode(lower.charCodeAt(3))) {
+          if (isDigitCode(lower.charCodeAt(4))) this.error('nt transpose takes a single digit');
           temptrans = Number(command[3]);
           command = command.slice(0, 0) + command.slice(4);
         }
         if (lower.startsWith('nt-') && isDigitCode(lower.charCodeAt(3))) {
+          if (isDigitCode(lower.charCodeAt(4))) this.error('nt transpose takes a single digit');
           temptrans = -Number(command[3]);
           command = command.slice(0, 0) + command.slice(4);
         }
@@ -1983,6 +2020,9 @@ CB 56 Cowbell
         });
 
         abstime += ticksOff;
+        }
+      } finally {
+        this.currentErrorContext = previousErrorContext;
       }
 
       return { index: trackIndex, events };
@@ -2010,6 +2050,7 @@ CB 56 Cowbell
       }
       const r = this.rng();
       const power = Number(q);
+      if (!Number.isFinite(power)) this.error(`invalid random quality ${q}`);
       return (Math.abs(r - 0.5) * 2) ** power * (r > 0.5 ? 1 : -1);
     }
 
@@ -2017,15 +2058,11 @@ CB 56 Cowbell
       let loc = stringa.indexOf(opendelim, startp);
       if (loc === -1) return -1;
       let level = 1;
-      let notover = true;
-      while (level && notover) {
+      while (level) {
         const locopen = stringa.indexOf(opendelim, loc + 1);
         const locclose = stringa.indexOf(closedelim, loc + 1);
-        if (locopen + locclose === -2) {
-          notover = false;
-          continue;
-        }
-        if (locopen < locclose && locopen !== -1) {
+        if (locclose === -1) this.error(`matching ${opendelim}/${closedelim} error`, this.sourceContext(stringa, loc));
+        if (locopen !== -1 && locopen < locclose) {
           loc = locopen;
           level += 1;
         } else {
@@ -2033,7 +2070,6 @@ CB 56 Cowbell
           level -= 1;
         }
       }
-      if (level) this.error(`matching ${opendelim}/${closedelim} error`);
       return loc;
     }
 
@@ -2041,15 +2077,11 @@ CB 56 Cowbell
       let loc = stringa.lastIndexOf(opendelim, startp);
       if (loc === -1) return -1;
       let level = 1;
-      let notover = true;
-      while (level && notover) {
+      while (level) {
         const locopen = stringa.lastIndexOf(opendelim, loc - 1);
         const locclose = stringa.lastIndexOf(closedelim, loc - 1);
-        if (locopen + locclose === -2) {
-          notover = false;
-          continue;
-        }
-        if (locopen > locclose) {
+        if (locclose === -1) this.error(`matching ${opendelim}/${closedelim} error`, this.sourceContext(stringa, loc));
+        if (locopen !== -1 && locopen > locclose) {
           loc = locopen;
           level += 1;
         } else {
@@ -2057,7 +2089,6 @@ CB 56 Cowbell
           level -= 1;
         }
       }
-      if (level) this.error(`matching ${opendelim}/${closedelim} error`);
       return loc;
     }
 
@@ -2065,8 +2096,29 @@ CB 56 Cowbell
       return (ms / 1000) * (this.tempo / 60) * this.ppqn;
     }
 
-    error(message) {
-      throw new Error(`Musicpad error: ${message}`);
+    sourceContext(value, index) {
+      const safeIndex = Math.max(0, Math.min(String(value).length, Number(index) || 0));
+      const start = Math.max(0, safeIndex - 15);
+      const end = Math.min(String(value).length, safeIndex + 15);
+      const sourceText = String(value).slice(start, end).replace(/\s+/g, ' ').trim();
+      return { sourceText };
+    }
+
+    errorContextText(context) {
+      if (!context) return '';
+      if (context.sourceToken != null) {
+        const token = String(context.sourceToken).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return ` (track ${context.trackIndex}, token "${token}")`;
+      }
+      if (context.sourceText) {
+        const sourceText = String(context.sourceText).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        return ` (near "${sourceText}")`;
+      }
+      return '';
+    }
+
+    error(message, context) {
+      throw new Error(`Musicpad error: ${message}${this.errorContextText(context || this.currentErrorContext)}`);
     }
   }
 
@@ -2130,16 +2182,6 @@ CB 56 Cowbell
         continue;
       }
 
-      if (token === '-' && shouldMergeDash(last)) {
-        tokens[lastIndex] = `${last}-`;
-        const next = raw[i + 1];
-        if (shouldConsumeAfterDash(last, next)) {
-          tokens[lastIndex] += next;
-          i += 1;
-        }
-        continue;
-      }
-
       tokens.push(token);
     }
 
@@ -2148,9 +2190,11 @@ CB 56 Cowbell
 
   function explodeTrackChars(value) {
     let out = '';
+    let bracketDepth = 0;
     for (let i = 0; i < value.length; i += 1) {
       const char = value[i];
       const lower = char.toLowerCase();
+      const inBracket = bracketDepth > 0;
       if (lower === 'i') {
         const match = value.slice(i).match(/^i([A-Z0-9]+)/i);
         if (match && (INSTRUMENT_MAP[match[1].toUpperCase()] != null || DRUM_MAP[match[1].toUpperCase()] != null)) {
@@ -2160,31 +2204,27 @@ CB 56 Cowbell
         }
       }
       if (char === '(' || char === ')') continue;
-      if (lower === 'x' || char === '-' || char === '=') out += ` ${char} `;
+      if (char === '[') {
+        bracketDepth += 1;
+        out += char;
+        continue;
+      }
+      if (char === ']') {
+        if (bracketDepth > 0) bracketDepth -= 1;
+        out += char;
+        continue;
+      }
+      if (char === '-') out += shouldAttachDash(value[i - 1]) ? char : ` ${char} `;
+      else if ((lower === 'x' && !inBracket) || char === '=') out += ` ${char} `;
       else out += char;
     }
     return out;
   }
 
-  function shouldMergeDash(token) {
-    if (!token) return false;
-    const lower = token.toLowerCase();
-    const code = lower.charCodeAt(lower.length - 1);
-    return (code >= 97 && code <= 103) || code === 104 || code === 110 || code === 116 || token.endsWith(',') || token.endsWith('[') || lower.endsWith('g:');
-  }
-
-  function shouldConsumeAfterDash(token, next) {
-    if (!next || next === '-') return false;
-    const lower = token.toLowerCase();
-    if (token.endsWith(',') || token.endsWith('[') || lower.endsWith('g:')) return true;
-
-    const code = lower.charCodeAt(lower.length - 1);
-    if (code === 104 || code === 110 || code === 116) return true;
-    if (code >= 97 && code <= 103) {
-      const nextCode = next.charCodeAt(0);
-      return next[0] === '/' || isDigitCode(nextCode);
-    }
-    return false;
+  function shouldAttachDash(previous) {
+    if (!previous) return false;
+    const code = previous.charCodeAt(0);
+    return (code >= 65 && code <= 90) || (code >= 97 && code <= 122) || previous === ',' || previous === ':' || previous === '[';
   }
 
   function compactSpaces(value) {
@@ -2680,16 +2720,18 @@ CB 56 Cowbell
 
   function midiBytesFromTracks(ppqn, tempo, mtracks, title, author) {
     const tempoMicros = 1000000 * 60 / tempo;
-    const meta = new MidiByteWriter(64 + (title ? title.length : 0) + (author ? author.length : 0));
-    if (title) {
+    const titleBytes = title ? utf8Bytes(title) : null;
+    const authorBytes = author ? utf8Bytes(author) : null;
+    const meta = new MidiByteWriter(64 + (titleBytes ? titleBytes.length : 0) + (authorBytes ? authorBytes.length : 0));
+    if (titleBytes) {
       meta.pushBytes(0, 0xFF, 0x03);
-      meta.pushVarLen(title.length);
-      meta.pushAscii(title);
+      meta.pushVarLen(titleBytes.length);
+      meta.appendBytes(titleBytes);
     }
-    if (author) {
+    if (authorBytes) {
       meta.pushBytes(0, 0xFF, 0x02);
-      meta.pushVarLen(author.length);
-      meta.pushAscii(author);
+      meta.pushVarLen(authorBytes.length);
+      meta.appendBytes(authorBytes);
     }
     meta.pushBytes(0, 0xFF, 1, VERSION.length);
     meta.pushAscii(VERSION);
@@ -2715,6 +2757,19 @@ CB 56 Cowbell
       wholetrack.appendBytes(mtrack);
     }
     return wholetrack.toUint8Array();
+  }
+
+  function utf8Bytes(text) {
+    if (typeof TextEncoder !== 'undefined') return new TextEncoder().encode(text);
+    const bytes = [];
+    for (const char of String(text)) {
+      const code = char.codePointAt(0);
+      if (code <= 0x7F) bytes.push(code);
+      else if (code <= 0x7FF) bytes.push(0xC0 | (code >> 6), 0x80 | (code & 0x3F));
+      else if (code <= 0xFFFF) bytes.push(0xE0 | (code >> 12), 0x80 | ((code >> 6) & 0x3F), 0x80 | (code & 0x3F));
+      else bytes.push(0xF0 | (code >> 18), 0x80 | ((code >> 12) & 0x3F), 0x80 | ((code >> 6) & 0x3F), 0x80 | (code & 0x3F));
+    }
+    return Uint8Array.from(bytes);
   }
 
   class MidiByteWriter {
